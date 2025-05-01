@@ -225,13 +225,35 @@ typedef struct {
 static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, zval *op2) { /* {{{ */
     NDArray *nda = ZVAL_TO_NDARRAY(op1);
     NDArray *ndb = ZVAL_TO_NDARRAY(op2);
+
     if (nda == NULL | ndb == NULL) {
         return FAILURE;
     }
+
+    if (NDArray_TYPE(nda) != NDArray_TYPE(ndb)) {
+        if (NDArray_TYPE(nda) == NDARRAY_TYPE_FLOAT32) {
+            NDArray *temp = NDArray_Zeros(NDArray_SHAPE(nda), NDArray_NDIM(nda), NDARRAY_TYPE_DOUBLE64, NDArray_DEVICE(nda));
+            for (int i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
+                NDArray_DDATA(temp)[i] = (double)NDArray_FDATA(nda)[i];
+            }
+            nda = temp;
+        } else {
+            NDArray *temp = NDArray_Zeros(NDArray_SHAPE(ndb), NDArray_NDIM(ndb), NDARRAY_TYPE_DOUBLE64, NDArray_DEVICE(ndb));
+            for (int i = 0; i < NDArray_NUMELEMENTS(ndb); i++) {
+                NDArray_DDATA(temp)[i] = (double)NDArray_FDATA(ndb)[i];
+            }
+            ndb = temp;
+        }
+    }
+
     NDArray *rtn = NULL;
     switch(opcode) {
     case ZEND_ADD:
-        rtn = NDArray_Add_Float(nda, ndb);
+        if (NDArray_TYPE(nda) == NDARRAY_TYPE_DOUBLE64) {
+            rtn = NDArray_Add_Double(nda, ndb);
+        } else {
+            rtn = NDArray_Add_Float(nda, ndb);
+        }
         break;
     case ZEND_SUB:
         rtn = NDArray_Subtract_Float(nda, ndb);

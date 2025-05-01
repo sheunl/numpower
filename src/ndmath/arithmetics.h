@@ -19,6 +19,7 @@ float NDArray_Median_Float(NDArray* a);
 
 //Doubles
 NDArray* NDArray_Subtract_Double(NDArray* a, NDArray* b);
+NDArray* NDArray_Add_Double(NDArray* a, NDArray* b);
 NDArray* NDArray_Pow_Double(NDArray* a, NDArray* b);
 double NDArray_Sum_Double(NDArray* a);
 
