@@ -158,8 +158,6 @@ int iteration = 0;
 void
 NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_index) {
     zval * element;
-    double* data_double;
-    float* data_float;
 
     ZEND_HASH_FOREACH_VAL(target_zval, element) {
         ZVAL_DEREF(element);
@@ -168,13 +166,48 @@ NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_in
                 NDArrayFillFromZendArray(target, Z_ARRVAL_P(element), first_index);
                 break;
             case IS_LONG:
-            case IS_DOUBLE:
                 if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
                     data_float = NDArray_FDATA(target);
                     data_float[*first_index] = (float) zval_get_long(element);
                 } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
                     data_double = NDArray_DDATA(target);
                     data_double[*first_index] = zval_get_long(element);
+                }
+            case IS_DOUBLE:
+                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) zval_get_double(element);
+                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = zval_get_double(element);
+                }
+                *first_index = *first_index + 1;
+                break;
+            case IS_TRUE:
+                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) 1.0;
+                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = (double) 1.0;
+                }
+                *first_index = *first_index + 1;
+                break;
+            case IS_FALSE:
+                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) 0.0;
+                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = (double) 0.0;
                 }
                 *first_index = *first_index + 1;
                 break;
