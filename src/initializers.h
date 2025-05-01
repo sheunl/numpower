@@ -4,6 +4,9 @@
 #include <Zend/zend_types.h>
 #include "ndarray.h"
 
+NDArray *NDArrayFactory_CreateFromZval(zval* php_object, const char* type);
+NDArray *NDArrayFactory_CreateFromZendArray(zend_array *ht, int ndim, const char* type);
+
 NDArray* Create_NDArray(int* shape, int ndim, const char* type, int device);
 NDArray* Create_NDArray_FromZval(zval* php_object);
 NDArray* NDArray_FromNDArray(NDArray *target, int buffer_offset, int* shape, int* strides, const int* ndim);

@@ -102,6 +102,31 @@ void ndarray_init_new_object(NDArray* array, zval* return_value) {
     }
 }
 
+/**
+ * @brief Converts a zval value to an NDArray object.
+ *
+ * This function handles several data types:
+ * - Arrays (IS_ARRAY) — creates an NDArray from an array.
+ * - Long integers (IS_LONG) — creates an NDArray from a long integer value.
+ * - Doubles (IS_DOUBLE) — creates an NDArray from a double value.
+ * - Objects (IS_OBJECT) — if the object is an instance of the NDArray class, it returns its buffer.
+ * If the object is a GD image (GdImage), it creates an NDArray from the image.
+ *
+ * @param[in] obj A pointer to the zval value to be converted to an NDArray.
+ * 
+ * @return A pointer to the created NDArray object, or NULL if conversion fails.
+ * 
+ * @throw Error If the type is unsupported.
+ */
+NDArray* ZVAL_OBJECT_TO_NDARRAY(zval* obj, const char *type) {
+    if (Z_TYPE_P(obj) == IS_ARRAY) {
+        return NDArrayFactory_CreateFromZval(obj, type);
+    }
+    
+    zend_throw_error(NULL, "argument must be an array, long, double, gdimage or NDArray.");
+    return NULL;
+}
+
 NDArray* ZVAL_TO_NDARRAY(zval* obj) {
     if (Z_TYPE_P(obj) == IS_ARRAY) {
         return Create_NDArray_FromZval(obj);
@@ -437,20 +462,48 @@ PHP_METHOD(NumPower, __construct) {
     ZEND_PARSE_PARAMETERS_END();
 }
 
-/* }}}*/
+/**
+ * @brief Constructor for the NDArray class.
+ */
 ZEND_BEGIN_ARG_INFO(arginfo_construct, 1)
-ZEND_ARG_INFO(0, obj_zval)
+    ZEND_ARG_INFO(0, input)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dataType, IS_STRING, 0, "double64")
 ZEND_END_ARG_INFO();
 PHP_METHOD(NDArray, __construct) {
+
     zend_object *obj = Z_OBJ_P(ZEND_THIS);
-    zval *obj_zval;
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-    Z_PARAM_ZVAL(obj_zval)
+    zval *input;
+
+    char *dataType;
+    size_t dataTypeLen;
+    const char *ndarrayDataType;
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_ZVAL(input)
+    Z_PARAM_OPTIONAL
+        Z_PARAM_STRING(dataType, dataTypeLen)
     ZEND_PARSE_PARAMETERS_END();
-    NDArray* array = ZVAL_TO_NDARRAY(obj_zval);
-    if (array == NULL) {
+
+    if (ZEND_NUM_ARGS() < 2) {
+        dataType = "double64";
+        dataTypeLen = sizeof("double64") - 1;
+    }
+
+    if (dataTypeLen == 7 && memcmp(dataType, "float32", 7) == 0) {
+        ndarrayDataType = NDARRAY_TYPE_FLOAT32;
+    } else if (dataTypeLen == 8 && memcmp(dataType, "double64", 8) == 0) {
+        ndarrayDataType = NDARRAY_TYPE_DOUBLE64;
+    } else {
+        zend_throw_error(NULL, "Invalid data type. Supported types are: float32, double64");
         return;
     }
+
+    NDArray* array = ZVAL_OBJECT_TO_NDARRAY(input, ndarrayDataType);
+    if (array == NULL) {
+        zend_throw_error(NULL, "Invalid NDArray object");
+        return;
+    }
+
     add_to_buffer(array);
     ZVAL_LONG(OBJ_PROP_NUM(obj, 0), NDArray_UUID(array));
 }

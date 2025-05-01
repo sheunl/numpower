@@ -23,6 +23,28 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
 #pragma ide diagnostic ignored "NullDereference"
+
+/**
+ * Get number of dimensions from php_array
+ *
+ * @param arr
+ * @return
+ */
+int get_num_dims_from_zval(zval *arr) {
+    int num_dims = 0;
+
+    if (zend_array_count(Z_ARRVAL_P(arr)) == 0) {
+        return 1;
+    }
+
+    zval *val = zend_hash_index_find(Z_ARRVAL_P(arr), 0);
+    while (val && Z_TYPE_P(val) == IS_ARRAY) {
+        num_dims++;
+        val = zend_hash_index_find(Z_ARRVAL_P(val), 0);
+    }
+    return num_dims+1;
+}
+
 /**
  *
  * @param arr
@@ -72,26 +94,7 @@ int is_packed_zend_array(zend_array *arr) {
     }
 }
 
-/**
- * Get number of dimensions from php_array
- *
- * @param arr
- * @return
- */
-int get_num_dims_from_zval(zval *arr) {
-    int num_dims = 0;
 
-    if (zend_array_count(Z_ARRVAL_P(arr)) == 0) {
-        return 1;
-    }
-
-    zval *val = zend_hash_index_find(Z_ARRVAL_P(arr), 0);
-    while (val && Z_TYPE_P(val) == IS_ARRAY) {
-        num_dims++;
-        val = zend_hash_index_find(Z_ARRVAL_P(val), 0);
-    }
-    return num_dims+1;
-}
 
 /**
  * Create a new NDArray Descriptor
@@ -151,6 +154,38 @@ int iteration = 0;
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
+
+void
+NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_index) {
+    zval * element;
+    double* data_double;
+    float* data_float;
+
+    ZEND_HASH_FOREACH_VAL(target_zval, element) {
+        ZVAL_DEREF(element);
+        switch (Z_TYPE_P(element)) {
+            case IS_ARRAY:
+                NDArrayFillFromZendArray(target, Z_ARRVAL_P(element), first_index);
+                break;
+            case IS_LONG:
+            case IS_DOUBLE:
+                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) zval_get_long(element);
+                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = zval_get_long(element);
+                }
+                *first_index = *first_index + 1;
+                break;
+            default:
+                zend_throw_error(NULL, "an element with an invalid type was used at initialization");
+                return;
+        }
+    }
+    ZEND_HASH_FOREACH_END();
+}
+
 /**
  * @param target_carray
  */
@@ -940,4 +975,70 @@ NDArray_Binomial(int *shape, int ndim, int n, float p) {
         NDArray_FDATA(rtn)[i] = (float)successes;
     }
     return rtn;
+}
+
+/**
+ * @brief Creates an NDArray object from a zval object.
+ *
+ * This function takes a PHP object (zval) and creates an NDArray from it.
+ * The type parameter is used to specify the desired data type of the NDArray.
+ *
+ * @param[in] php_object  A pointer to the zval object to be converted to an NDArray.
+ * @param[in] type        A string representing the desired data type for the NDArray.
+ * 
+ * @return A pointer to the newly created NDArray, or NULL if the zval is not an array.
+ */
+NDArray* NDArrayFactory_CreateFromZval(zval* php_object, const char* type) {
+    NDArray* new_array = NULL;
+    if (Z_TYPE_P(php_object) == IS_ARRAY) {
+        new_array = NDArrayFactory_CreateFromZendArray(Z_ARRVAL_P(php_object), get_num_dims_from_zval(php_object), type);
+    }
+    return new_array;
+}
+
+/**
+ * @brief Creates an NDArray object from a zval php array.
+ *
+ * This function takes a PHP array (zval) and creates an NDArray from it.
+ * The type parameter is used to specify the desired data type of the NDArray.
+ *
+ * @param[in] ht    A pointer to the zval array value to be converted to an NDArray.
+ * @param     ndim  A number of PHP array dimensions.
+ * @param[in] type  A string representing the desired data type for the NDArray.
+ * 
+ * @return A pointer to the newly created NDArray, or NULL if the zval is not an array.
+ */
+NDArray* NDArrayFactory_CreateFromZendArray(zend_array* ht, int ndim, const char *type) {
+    int last_index = 0;
+    int *shape;
+
+    if (ndim != 0) {
+        shape = ecalloc(ndim, sizeof(int));
+    } else {
+        shape = ecalloc(1, sizeof(int));
+    }
+
+    if (!is_packed_zend_array(ht)) {
+        return NULL;
+    }
+
+    get_zend_array_shape(ht, shape, ndim);
+    int total_num_elements = shape[0];
+
+    // Calculate number of elements
+    for (int i = 1; i < ndim; i++) {
+        total_num_elements = total_num_elements * shape[i];
+    }
+
+    NDArray* array = Create_NDArray(shape, ndim, type, NDARRAY_DEVICE_CPU);
+    
+    if (ndim != 0) {
+        NDArray_CreateBuffer(array, total_num_elements, get_type_size(type));
+        NDArrayFillFromZendArray(array, ht, &last_index);
+    } else {
+        array->data = NULL;
+        array->descriptor->numElements = 0;
+    }
+
+    return array;
 }
