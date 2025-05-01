@@ -3,6 +3,7 @@
 
 #include "../ndarray.h"
 
+//FLoats
 NDArray* NDArray_Subtract_Float(NDArray* a, NDArray* b);
 NDArray* NDArray_Add_Float(NDArray* a, NDArray* b);
 NDArray* NDArray_Multiply_Float(NDArray* a, NDArray* b);
@@ -15,4 +16,10 @@ float NDArray_Mean_Float(NDArray* a);
 float NDArray_Mean_Float_Axis(NDArray* a, NDArray *b);
 NDArray* NDArray_Abs(NDArray *nda);
 float NDArray_Median_Float(NDArray* a);
+
+//Doubles
+NDArray* NDArray_Subtract_Double(NDArray* a, NDArray* b);
+NDArray* NDArray_Pow_Double(NDArray* a, NDArray* b);
+double NDArray_Sum_Double(NDArray* a);
+
 #endif //PHPSCI_NDARRAY_ARITHMETICS_H

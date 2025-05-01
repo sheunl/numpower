@@ -3,6 +3,8 @@
 #include "string.h"
 #include "../initializers.h"
 #include "arithmetics.h"
+#include "../ndarray.h"
+#include "../types.h"
 
 // Comparison function for sorting
 int compare_quantile(const void* a, const void* b) {
@@ -110,18 +112,35 @@ NDArray_Std(NDArray *a) {
  */
 NDArray*
 NDArray_Variance(NDArray *a) {
-    NDArray *mean = NDArray_CreateFromFloatScalar(NDArray_Sum_Float(a) / NDArray_NUMELEMENTS(a));
-    NDArray *subtracted = NDArray_Subtract_Float(a, mean);
-    NDArray_FREE(mean);
-    NDArray *abs = NDArray_Abs(subtracted);
-    NDArray_FREE(subtracted);
-    NDArray *two = NDArray_CreateFromFloatScalar(2.0f);
-    NDArray *pow = NDArray_Pow_Float(abs, two);
-    NDArray_FREE(abs);
-    NDArray_FREE(two);
-    NDArray *x = NDArray_CreateFromFloatScalar(NDArray_Sum_Float(pow) / NDArray_NUMELEMENTS(pow));
-    NDArray_FREE(pow);
-    return x;
+    if (NDArray_TYPE(a) == NDARRAY_TYPE_DOUBLE64) {
+        NDArray *mean = NDArrayFactory_CreateFromDoubleScalar(NDArray_Sum_Double(a) / NDArray_NUMELEMENTS(a));
+        NDArray *subtracted = NDArray_Subtract_Double(a, mean);
+        NDArray_FREE(mean);
+        NDArray *abs = NDArray_Abs(subtracted);
+        NDArray_FREE(subtracted);
+        NDArray *two = NDArrayFactory_CreateFromDoubleScalar(2.0);
+        NDArray *pow = NDArray_Pow_Double(abs, two);
+        NDArray_FREE(abs);
+        NDArray_FREE(two);
+        NDArray *x = NDArrayFactory_CreateFromDoubleScalar(NDArray_Sum_Double(pow) / NDArray_NUMELEMENTS(pow));
+        NDArray_FREE(pow);
+        return x;
+        //zend_throw_error(NULL, "NDArray::variance not available for double64.");
+        //return NULL;
+    } else {
+        NDArray *mean = NDArray_CreateFromFloatScalar(NDArray_Sum_Float(a) / NDArray_NUMELEMENTS(a));
+        NDArray *subtracted = NDArray_Subtract_Float(a, mean);
+        NDArray_FREE(mean);
+        NDArray *abs = NDArray_Abs(subtracted);
+        NDArray_FREE(subtracted);
+        NDArray *two = NDArray_CreateFromFloatScalar(2.0f);
+        NDArray *pow = NDArray_Pow_Float(abs, two);
+        NDArray_FREE(abs);
+        NDArray_FREE(two);
+        NDArray *x = NDArray_CreateFromFloatScalar(NDArray_Sum_Float(pow) / NDArray_NUMELEMENTS(pow));
+        NDArray_FREE(pow);
+        return x;
+    }
 }
 
 /**

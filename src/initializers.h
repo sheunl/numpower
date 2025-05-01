@@ -6,6 +6,8 @@
 
 NDArray *NDArrayFactory_CreateFromZval(zval* php_object, const char* type);
 NDArray *NDArrayFactory_CreateFromZendArray(zend_array *ht, int ndim, const char* type);
+NDArray* NDArrayFactory_CreateFromDoubleScalar(double scalar);
+
 
 NDArray* Create_NDArray(int* shape, int ndim, const char* type, int device);
 NDArray* Create_NDArray_FromZval(zval* php_object);
@@ -30,6 +32,9 @@ NDArray* NDArray_Arange(double start, double stop, double step);
 NDArray* NDArray_Binomial(int *shape, int ndim, int n, float p);
 NDArray* NDArray_EmptyLike(NDArray *a);
 NDArray* NDArray_FromNDArrayBase(NDArray *target, char *data_ptr, int* shape, int* strides, const int ndim);
+
+NDArray* NDArray_FillDouble(NDArray *a, double fill_value);
+
 #ifdef __cplusplus
 extern "C" {
 #endif

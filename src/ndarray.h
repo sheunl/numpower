@@ -117,6 +117,7 @@ int NDArray_ShapeCompare(NDArray *a, NDArray *b);
 NDArray* NDArray_Broadcast(NDArray *a, NDArray *b);
 int NDArray_IsBroadcastable(const NDArray *arr1, const NDArray *arr2);
 float NDArray_GetFloatScalar(NDArray *a);
+double NDArray_GetDoubleScalar(NDArray *a);
 void NDArray_FREEDATA(NDArray *target);
 int NDArray_Overwrite(NDArray *target, NDArray *values);
 NDArray* NDArray_FromGD(zval *a, bool channel_last);
@@ -136,10 +137,15 @@ void NDArray_CreateSortedStridePerm(int ndim, int const *strides, ndarray_stride
 typedef float (*ElementWiseDoubleOperation)(float);
 typedef float (*ElementWiseFloatOperation2F)(float, float, float);
 typedef float (*ElementWiseFloatOperation1F)(float, float);
+
+typedef double (*ElementWiseRealDoubleOperation)(double);
+
 NDArray* NDArray_Map(NDArray *array, ElementWiseDoubleOperation op);
 NDArray* NDArray_Map_Zval(NDArray *array, zval *callback);
 NDArray* NDArray_Map2F(NDArray *array, ElementWiseFloatOperation2F op, float val1, float val2);
 NDArray* NDArray_Map1F(NDArray *array, ElementWiseFloatOperation1F op, float val1);
 NDArray* NDArray_Map1ND(NDArray *array, ElementWiseFloatOperation1F op, NDArray *val1);
+
+NDArray* NDArray_Map_Double(NDArray *array, ElementWiseRealDoubleOperation op);
 
 #endif //PHPSCI_NDARRAY_NDARRAY_H

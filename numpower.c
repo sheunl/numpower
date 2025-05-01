@@ -97,7 +97,11 @@ void ndarray_init_new_object(NDArray* array, zval* return_value) {
         object_init_ex(return_value, phpsci_ce_NDArray);
         ZVAL_LONG(OBJ_PROP_NUM(Z_OBJ_P(return_value), 0), NDArray_UUID(array));
     } else {
-        ZVAL_DOUBLE(return_value, NDArray_GetFloatScalar(array));
+        if (NDArray_TYPE(array) == NDARRAY_TYPE_DOUBLE64) {
+            ZVAL_DOUBLE(return_value, NDArray_GetDoubleScalar(array));
+        } else {
+            ZVAL_DOUBLE(return_value, NDArray_GetFloatScalar(array));
+        }
         NDArray_FREE(array);
     }
 }
@@ -2994,9 +2998,11 @@ PHP_METHOD(NumPower, variance) {
     zval *array;
     long axis;
     int i_axis;
+    
     ZEND_PARSE_PARAMETERS_START(1, 1)
-    Z_PARAM_ZVAL(array)
+        Z_PARAM_ZVAL(array)
     ZEND_PARSE_PARAMETERS_END();
+    
     i_axis = (int)axis;
     NDArray *nda = ZVAL_TO_NDARRAY(array);
     if (nda == NULL) {

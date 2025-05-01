@@ -78,6 +78,10 @@ void cuda_float_transpose(int tiledim, int blockrows, const float *d_in, float *
 void cuda_float_positive(int nblocks, float *d_array);
 void cuda_float_reciprocal(int nblocks, float *d_array);
 void cuda_truncated_normal(float* d_data, int size, double loc, double scale);
+
+//Doubles
+void cuda_sum_double(int nblocks, double *a, double *rtn, int nelements);
+
 #ifdef __cplusplus
 }
 #endif

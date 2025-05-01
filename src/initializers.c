@@ -166,21 +166,21 @@ NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_in
                 NDArrayFillFromZendArray(target, Z_ARRVAL_P(element), first_index);
                 break;
             case IS_LONG:
-                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
                     data_float = NDArray_FDATA(target);
                     data_float[*first_index] = (float) zval_get_long(element);
-                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
                     double* data_double;
                     data_double = NDArray_DDATA(target);
                     data_double[*first_index] = zval_get_long(element);
                 }
             case IS_DOUBLE:
-                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
                     data_float = NDArray_FDATA(target);
                     data_float[*first_index] = (float) zval_get_double(element);
-                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
                     double* data_double;
                     data_double = NDArray_DDATA(target);
                     data_double[*first_index] = zval_get_double(element);
@@ -188,11 +188,11 @@ NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_in
                 *first_index = *first_index + 1;
                 break;
             case IS_TRUE:
-                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
                     data_float = NDArray_FDATA(target);
                     data_float[*first_index] = (float) 1.0;
-                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
                     double* data_double;
                     data_double = NDArray_DDATA(target);
                     data_double[*first_index] = (double) 1.0;
@@ -200,11 +200,11 @@ NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_in
                 *first_index = *first_index + 1;
                 break;
             case IS_FALSE:
-                if (target->descriptor->type == NDARRAY_TYPE_FLOAT32) {
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
                     data_float = NDArray_FDATA(target);
                     data_float[*first_index] = (float) 0.0;
-                } else if (target->descriptor->type == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
                     double* data_double;
                     data_double = NDArray_DDATA(target);
                     data_double[*first_index] = (double) 0.0;
@@ -464,6 +464,16 @@ NDArray_Empty(int *shape, int ndim, const char *type, int device) {
             vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(rtn) * sizeof(float));
 #endif
         }
+    } else {
+        if (device == NDARRAY_DEVICE_CPU) {
+            rtn->device = NDARRAY_DEVICE_CPU;
+            rtn->data = emalloc(NDArray_NUMELEMENTS(rtn) * sizeof(double));
+        } else {
+#ifdef HAVE_CUBLAS
+            rtn->device = NDARRAY_DEVICE_GPU;
+            vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(rtn) * sizeof(double));
+        }
+#endif  
     }
     return rtn;
 }
@@ -793,6 +803,22 @@ NDArray_Fill(NDArray *a, float fill_value) {
     return a;
 }
 
+NDArray* NDArray_FillDouble(NDArray *a, double fill_value) {
+    int i;
+
+    if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
+#ifdef HAVE_CUBLAS
+        cuda_fill_float(NDArray_FDATA(a), fill_value, NDArray_NUMELEMENTS(a));
+        return a;
+#endif
+    } else {
+        for (i = 0; i < NDArray_NUMELEMENTS(a); i++) {
+            NDArray_DDATA(a)[i] = fill_value;
+        }
+    }
+    return a;
+}
+
 /**
  * @param a
  * @return
@@ -841,7 +867,7 @@ NDArray_CreateFromFloatScalar(float scalar) {
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
-    rtn->descriptor->elsize = sizeof(float );
+    rtn->descriptor->elsize = sizeof(float);
     rtn->descriptor->type = NDARRAY_TYPE_FLOAT32;
     rtn->data = emalloc(sizeof(float));
     rtn->device = NDARRAY_DEVICE_CPU;
@@ -1074,4 +1100,23 @@ NDArray* NDArrayFactory_CreateFromZendArray(zend_array* ht, int ndim, const char
     }
 
     return array;
+}
+
+NDArray* NDArrayFactory_CreateFromDoubleScalar(double scalar) {
+    NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
+
+    rtn->ndim = 0;
+    rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
+    rtn->descriptor->numElements = 1;
+    rtn->descriptor->elsize = sizeof(double);
+    rtn->descriptor->type = NDARRAY_TYPE_DOUBLE64;
+    rtn->data = emalloc(sizeof(double));
+    rtn->device = NDARRAY_DEVICE_CPU;
+    rtn->strides = emalloc(sizeof(int));
+    rtn->dimensions = emalloc(sizeof(int));
+    rtn->iterator = NULL;
+    rtn->base = NULL;
+    rtn->refcount = 1;
+    ((double*)rtn->data)[0] = (double)scalar;
+    return rtn;
 }
