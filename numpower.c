@@ -332,7 +332,7 @@ static void ndarray_objects_init(zend_class_entry *class_type) {
 }
 
 static void numpower_objects_init(zend_class_entry *class_type) {
-    memcpy(&numpower_object_handlers, &std_object_handlers, sizeof(zend_object_handlers));\
+    memcpy(&numpower_object_handlers, &std_object_handlers, sizeof(zend_object_handlers));
 }
 
 static void arithmetic_objects_init(zend_class_entry *class_type) {
@@ -5177,10 +5177,13 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ndarray_prod___toString, 0, 0, I
 ZEND_END_ARG_INFO()
 PHP_METHOD(NDArray, __toString) {
     zend_object *obj = Z_OBJ_P(ZEND_THIS);
+
     ZEND_PARSE_PARAMETERS_START(0, 0)
     ZEND_PARSE_PARAMETERS_END();
+    
     zval *obj_uuid = OBJ_PROP_NUM(obj, 0);
     NDArray* ndarray = ZVALUUID_TO_NDARRAY(obj_uuid);
+    
     char *result = NDArray_Print(ndarray, 1);
     RETVAL_STRING(result);
     efree(result);

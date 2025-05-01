@@ -661,18 +661,22 @@ char *
 NDArray_Print(NDArray *array, int do_return) {
     assert(array != NULL);
     char *str;
+
     if (is_type(NDArray_TYPE(array), NDARRAY_TYPE_DOUBLE64)) {
         str = print_matrix(NDArray_DDATA(array), NDArray_NDIM(array), NDArray_SHAPE(array),
                            NDArray_STRIDES(array), NDArray_NUMELEMENTS(array), NDArray_DEVICE(array));
     }
+
     if (is_type(NDArray_TYPE(array), NDARRAY_TYPE_FLOAT32)) {
         str = print_matrix_float(NDArray_FDATA(array), NDArray_NDIM(array), NDArray_SHAPE(array),
                                  NDArray_STRIDES(array), NDArray_NUMELEMENTS(array), NDArray_DEVICE(array));
     }
+
     if (do_return == 0) {
         printf("%s", str);
         return NULL;
     }
+    
     return str;
 }
 
