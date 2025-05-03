@@ -23,4 +23,6 @@ NDArray* NDArray_Add_Double(NDArray* a, NDArray* b);
 NDArray* NDArray_Pow_Double(NDArray* a, NDArray* b);
 double NDArray_Sum_Double(NDArray* a);
 
+NDArray* NDArray_Add(NDArray* a, NDArray* b);
+
 #endif //PHPSCI_NDARRAY_ARITHMETICS_H

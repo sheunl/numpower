@@ -1,42 +1,106 @@
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#include <Zend/zend_modules.h>
+// zend_ce_iterator, zend_ce_countable, zend_ce_arrayaccess
 #include <Zend/zend_interfaces.h>
+
+// PHP_METHOD, ZEND_PARSE_PARAMETERS_START, ZEND_PARSE_PARAMETERS_END
 #include "php.h"
+
+// php_info_print_table_start, php_info_print_table_header, php_info_print_table_end
 #include "ext/standard/info.h"
+
+// zend_function_entry
 #include "numpower_arginfo.h"
+
+// NDArrayFactory_CreateFromZval, Create_NDArray_FromZval, NDArray_CreateFromLongScalar, NDArray_CreateFromDoubleScalar
+// NDArray_Zeros,                 NDArray_Fill,            NDArray_Identity,             NDArray_Normal,
+// NDArray_TruncatedNormal,       NDArray_Binomial,        NDArray_StandardNormal,       NDArray_Poisson,
+// NDArray_Uniform,               NDArray_Diag,            NDArray_Full,                 NDArray_Ones,
+// NDArray_Arange,                NDArray_Copy,            
 #include "src/initializers.h"
-#include "Zend/zend_alloc.h"
-#include "Zend/zend_API.h"
+
+// add_to_buffer, buffer_get, buffer_ndarray_free, buffer_init, buffer_free
 #include "src/buffer.h"
+
+// NDArrayIteratorPHP_GET, NDArrayIteratorPHP_NEXT, NDArrayIteratorPHP_REWIND, NDArrayIteratorPHP_ISDONE
 #include "src/iterators.h"
+
+// phpsci_ce_NDArray, phpsci_ce_NumPower, phpsci_ce_ArithmeticOperand
 #include "php_numpower.h"
+
+// NDArray_Dump, NDArray_DumpDevices
 #include "src/debug.h"
+
+// NDArray_Add_Double,   NDArray_Add_Float,    NDArray_Subtract_Float, NDArray_Multiply_Float,
+// NDArray_Divide_Float, NDArray_Pow_Float,    NDArray_Mod_Float,      NDArray_Abs,
+// NDArray_Sum_Float,    NDArray_Median_Float, NDArray_Float_Prod
 #include "src/ndmath/arithmetics.h"
+
+// NDArray_ArrayEqual, NDArray_Equal,    NDArray_Greater, NDArray_GreaterEqual, NDArray_Less
+// NDArray_LessEqual,  NDArray_NotEqual, NDArray_All,     NDArray_AllClose
 #include "src/logic.h"
+
+// NDArray_Reshape,     NDArray_Transpose,       NDArray_AtLeast1D,   NDArray_AtLeast2D, NDArray_AtLeast3D
+// NDArray_Flatten,     NDArray_ExpandDim,       NDArray_Squeeze,     NDArray_Flip,      NDArray_SwapAxes,
+// NDArray_Rollaxis,    ndarray_moveaxis,        NDArray_VSTACK,      NDArray_HSTACK,    NDArray_DSTACK,
+// NDArray_ColumnStack, NDArray_ConcatenateFlat, NDArray_Concatenate, NDArray_Slice
 #include "src/manipulation.h"
+
+// float_sin,      float_cos,        float_tan,     float_arcsin,  float_rsqrt,
+// float_arccos,   float_arctan,     float_arctan2, float_degrees, float_sinh,
+// float_cosh,     float_tanh,       float_arcsinh, float_arccosh, float_arctanh,
+// float_rint,     float_fix,        float_trunc,   float_sinc,    float_negate,
+// float_positive, float_reciprocal, float_sign,    float_clip,    float_ceil,
+// float_round,    float_floor,      float_radians, float_sqrt,    float_exp,
+// float_exp2,     float_expm1,      float_log,     float_logb,    float_log10,
+// float_log1p,    float_log2
 #include "src/ndmath/double_math.h"
+
+// NDArray_Matmul, NDArray_Inner,      NDArray_Outer, NDArray_Dot,   NDArray_Trace,
+// NDArray_Eig,    NDArray_Cholesky,   NDArray_Solve, NDArray_Lstsq, NDArray_Qr,
+// NDArray_LU,     NDArray_MatrixRank, NDArray_Norm,  NDArray_Cond,  NDArray_Inverse,
+// NDArray_SVD,    NDArray_Det
 #include "src/ndmath/linalg.h"
+
+// COMPILE_DL_NDARRAY, HAVE_CUBLAS, HAVE_GD
 #include "config.h"
+
+// NDARRAY_TYPE_DOUBLE64, NDARRAY_TYPE_FLOAT32
 #include "src/types.h"
+
+// NDArray_Diagonal
 #include "src/indexing.h"
+
+// NDArray_Std, NDArray_Quantile, NDArray_Average, NDArray_Variance
 #include "src/ndmath/statistics.h"
+
+// VALID, SAME, FULL, PAD, CIRCULAR,
+// REFLECT
 #include "src/ndmath/signal.h"
+
+// NDArray_ArgMinMaxCommon
 #include "src/ndmath/calculation.h"
+
+// NDArrayDNN_Conv2D_Forward, NDArray_DNN_Conv1D, NDArrayDNN_Conv2D_Backward
 #include "src/dnn.h"
+
+// zval_parameter_to_normalized_axis_argument
 #include "src/sanitizers.h"
 
 #ifdef HAVE_CUBLAS
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
-#include "src/ndmath/cuda/cuda_math.h"
-#include "src/gpu_alloc.h"
+  // cuda_float_sin,        cuda_float_cos,     cuda_float_tan,     cuda_float_arcsin,  cuda_float_arccos,
+  // cuda_float_arctan,     cuda_float_arctan2, cuda_float_degrees, cuda_float_sinh,    cuda_float_cosh,
+  // cuda_float_tanh,       cuda_float_arcsinh, cuda_float_arccosh, cuda_float_arctanh, cuda_float_rint, 
+  // cuda_float_fix,        cuda_float_trunc,   cuda_float_sinc,    cuda_float_negate,  cuda_float_positive,
+  // cuda_float_reciprocal, cuda_float_sign,    cuda_float_clip,    cuda_float_ceil,    cuda_float_round,
+  // cuda_float_floor,      cuda_float_radians, cuda_float_sqrt,    cuda_float_exp,     cuda_float_expm1, 
+  // cuda_float_log,        cuda_float_logb,    cuda_float_log10,   cuda_float_log1p,   cuda_float_log2
+# include "src/ndmath/cuda/cuda_math.h"
+
+// vmemcheck
+# include "src/gpu_alloc.h"
 #endif
 
 #ifdef ZTS
-#include "TSRM.h"
+# include "TSRM.h"
 #endif
 
 #ifdef HAVE_GD
