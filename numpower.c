@@ -1,7 +1,7 @@
 // zend_ce_iterator, zend_ce_countable, zend_ce_arrayaccess
 #include <Zend/zend_interfaces.h>
 
-// PHP_METHOD, ZEND_PARSE_PARAMETERS_START, ZEND_PARSE_PARAMETERS_END
+// PHP_METHOD, ZEND_PARSE_PARAMETERS_START, ZEND_PARSE_PARAMETERS_END, ZEND_PARSE_PARAMETERS_NONE
 #include "php.h"
 
 // php_info_print_table_start, php_info_print_table_header, php_info_print_table_end
