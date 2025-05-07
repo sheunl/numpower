@@ -787,7 +787,7 @@ NDArray_Diag(NDArray *a) {
  * @return
  */
 NDArray*
-NDArray_Fill(NDArray *a, float fill_value) {
+NDArray_FillFloat(NDArray *a, float fill_value) {
     int i;
 
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
@@ -828,7 +828,7 @@ NDArray_Full(int *shape, int ndim,  double fill_value) {
     int *new_shape = emalloc(sizeof(int) * ndim);
     memcpy(new_shape, shape, sizeof(int) * ndim);
     NDArray *rtn = NDArray_Zeros(new_shape, ndim, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
-    return NDArray_Fill(rtn, (float)fill_value);
+    return NDArray_FillFloat(rtn, (float)fill_value);
 }
 
 /**
@@ -926,8 +926,12 @@ NDArray_Copy(NDArray *a, int device) {
         rtn->flags = 0;
         rtn->base = NULL;
         rtn->ndim = NDArray_NDIM(a);
-        vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(a) * sizeof(float));
-        cudaMemcpy(NDArray_FDATA(rtn), NDArray_FDATA(a), NDArray_NUMELEMENTS(a) * sizeof(float), cudaMemcpyDeviceToDevice);
+        vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a));
+        if (NDArray_TYPE(a) == NDARRAY_TYPE_FLOAT32) {
+            cudaMemcpy(NDArray_FDATA(rtn), NDArray_FDATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
+        } else if (NDArray_TYPE(a) == NDARRAY_TYPE_DOUBLE64) {
+            cudaMemcpy(NDArray_DDATA(rtn), NDArray_DDATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
+        }
         rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
         rtn->descriptor->numElements = NDArray_NUMELEMENTS(a);
         rtn->descriptor->elsize = NDArray_ELSIZE(a);
@@ -953,8 +957,8 @@ NDArray_Copy(NDArray *a, int device) {
         rtn->flags = 0;
         rtn->ndim = NDArray_NDIM(a);
         rtn->base = NULL;
-        rtn->data = emalloc(NDArray_NUMELEMENTS(a) * sizeof(float));
-        memcpy(NDArray_DATA(rtn), NDArray_DATA(a), NDArray_NUMELEMENTS(a) * sizeof(float));
+        rtn->data = emalloc(NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a));
+        memcpy(NDArray_DATA(rtn), NDArray_DATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a));
         rtn->descriptor = Create_Descriptor(NDArray_NUMELEMENTS(a), NDArray_ELSIZE(a), NDArray_TYPE(a));
         NDArrayIterator_INIT(rtn);
         return rtn;
@@ -1034,72 +1038,6 @@ NDArray_Binomial(int *shape, int ndim, int n, float p) {
         NDArray_FDATA(rtn)[i] = (float)successes;
     }
     return rtn;
-}
-
-/**
- * @brief Creates an NDArray object from a zval object.
- *
- * This function takes a PHP object (zval) and creates an NDArray from it.
- * The type parameter is used to specify the desired data type of the NDArray.
- *
- * @param[in] php_object  A pointer to the zval object to be converted to an NDArray.
- * @param[in] type        A string representing the desired data type for the NDArray.
- * 
- * @return A pointer to the newly created NDArray, or NULL if the zval is not an array.
- */
-NDArray* NDArrayFactory_CreateFromZval(zval* php_object, const char* type) {
-    NDArray* new_array = NULL;
-    if (Z_TYPE_P(php_object) == IS_ARRAY) {
-        new_array = NDArrayFactory_CreateFromZendArray(Z_ARRVAL_P(php_object), get_num_dims_from_zval(php_object), type);
-    }
-    return new_array;
-}
-
-/**
- * @brief Creates an NDArray object from a zval php array.
- *
- * This function takes a PHP array (zval) and creates an NDArray from it.
- * The type parameter is used to specify the desired data type of the NDArray.
- *
- * @param[in] ht    A pointer to the zval array value to be converted to an NDArray.
- * @param     ndim  A number of PHP array dimensions.
- * @param[in] type  A string representing the desired data type for the NDArray.
- * 
- * @return A pointer to the newly created NDArray, or NULL if the zval is not an array.
- */
-NDArray* NDArrayFactory_CreateFromZendArray(zend_array* ht, int ndim, const char *type) {
-    int last_index = 0;
-    int *shape;
-
-    if (ndim != 0) {
-        shape = ecalloc(ndim, sizeof(int));
-    } else {
-        shape = ecalloc(1, sizeof(int));
-    }
-
-    if (!is_packed_zend_array(ht)) {
-        return NULL;
-    }
-
-    get_zend_array_shape(ht, shape, ndim);
-    int total_num_elements = shape[0];
-
-    // Calculate number of elements
-    for (int i = 1; i < ndim; i++) {
-        total_num_elements = total_num_elements * shape[i];
-    }
-
-    NDArray* array = Create_NDArray(shape, ndim, type, NDARRAY_DEVICE_CPU);
-    
-    if (ndim != 0) {
-        NDArray_CreateBuffer(array, total_num_elements, get_type_size(type));
-        NDArrayFillFromZendArray(array, ht, &last_index);
-    } else {
-        array->data = NULL;
-        array->descriptor->numElements = 0;
-    }
-
-    return array;
 }
 
 NDArray* NDArrayFactory_CreateFromDoubleScalar(double scalar) {

@@ -10,7 +10,7 @@
  */
 int
 NDArrayIterator_ISDONE(NDArray* array) {
-    if (array->iterator->current_index >= NDArray_SHAPE(array)[0]) {
+    if (array->iterator->currentIndex >= NDArray_SHAPE(array)[0]) {
         return 1;
     }
     return 0;
@@ -21,7 +21,7 @@ NDArrayIterator_ISDONE(NDArray* array) {
  */
 void
 NDArrayIterator_NEXT(NDArray* array) {
-    array->iterator->current_index = array->iterator->current_index + 1;
+    array->iterator->currentIndex = array->iterator->currentIndex + 1;
 }
 
 /**
@@ -29,7 +29,7 @@ NDArrayIterator_NEXT(NDArray* array) {
  */
 void
 NDArrayIterator_REWIND(NDArray* array) {
-    array->iterator->current_index = 0;
+    array->iterator->currentIndex = 0;
 }
 
 /**
@@ -37,7 +37,7 @@ NDArrayIterator_REWIND(NDArray* array) {
  */
 int
 NDArrayIteratorPHP_ISDONE(NDArray* array) {
-    if (array->php_iterator->current_index >= NDArray_SHAPE(array)[0]) {
+    if (array->php_iterator->currentIndex >= NDArray_SHAPE(array)[0]) {
         return 1;
     }
     return 0;
@@ -48,7 +48,7 @@ NDArrayIteratorPHP_ISDONE(NDArray* array) {
  */
 void
 NDArrayIteratorPHP_NEXT(NDArray* array) {
-    array->php_iterator->current_index = array->php_iterator->current_index + 1;
+    array->php_iterator->currentIndex = array->php_iterator->currentIndex + 1;
 }
 
 /**
@@ -56,7 +56,7 @@ NDArrayIteratorPHP_NEXT(NDArray* array) {
  */
 void
 NDArrayIteratorPHP_REWIND(NDArray* array) {
-    array->php_iterator->current_index = 0;
+    array->php_iterator->currentIndex = 0;
 }
 
 /**
@@ -70,7 +70,7 @@ NDArrayIteratorPHP_GET(NDArray* array) {
     memcpy(output_shape, NDArray_SHAPE(array) + 1, sizeof(int) * output_ndim);
     NDArray* rtn = Create_NDArray(output_shape, output_ndim, NDArray_TYPE(array), NDArray_DEVICE(array));
     rtn->device = NDArray_DEVICE(array);
-    rtn->data = array->data + (array->php_iterator->current_index * NDArray_STRIDES(array)[0]);
+    rtn->data = array->data + (array->php_iterator->currentIndex * NDArray_STRIDES(array)[0]);
     rtn->base = array;
     return rtn;
 }
@@ -82,8 +82,8 @@ void
 NDArrayIterator_INIT(NDArray* array) {
     NDArrayIterator* iterator = (NDArrayIterator*)emalloc(sizeof(NDArrayIterator));
     NDArrayIterator* php_iterator = (NDArrayIterator*)emalloc(sizeof(NDArrayIterator));
-    iterator->current_index = 0;
-    php_iterator->current_index = 0;
+    iterator->currentIndex = 0;
+    php_iterator->currentIndex = 0;
     array->iterator = iterator;
     array->php_iterator = php_iterator;
 }
@@ -105,7 +105,7 @@ NDArrayIterator_GET(NDArray* array) {
     memcpy(output_shape, NDArray_SHAPE(array) + 1, sizeof(int) * output_ndim);
     NDArray* rtn = Create_NDArray(output_shape, output_ndim, NDArray_TYPE(array), NDArray_DEVICE(array));
     rtn->device = NDArray_DEVICE(array);
-    rtn->data = array->data + (array->iterator->current_index * NDArray_STRIDES(array)[0]);
+    rtn->data = array->data + (array->iterator->currentIndex * NDArray_STRIDES(array)[0]);
     rtn->base = array;
     return rtn;
 }
@@ -138,7 +138,7 @@ NDArray_NewElementWiseIter(NDArray *target) {
 
     nd = NDArray_NDIM(ao);
     it->contiguous = 1;
-    if (NDArray_CHKFLAGS(target, NDARRAY_ARRAY_F_CONTIGUOUS)) {
+    if (NDArray_checkFlags(target, NDARRAY_ARRAY_F_CONTIGUOUS)) {
         it->contiguous = 0;
     }
     it->ao = ao;
@@ -165,7 +165,7 @@ NDArray_PrepareTwoRawArrayIter(int ndim, int const *shape,
                                char **out_dataA, int *out_stridesA,
                                char **out_dataB, int *out_stridesB)
 {
-    ndarray_stride_sort_item strideperm[NDARRAY_MAX_DIMS];
+    NDArrayStrideSortItem strideperm[NDARRAY_MAX_DIMS];
     int i, j;
 
     /* Special case 0 and 1 dimensions */

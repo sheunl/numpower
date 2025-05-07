@@ -284,6 +284,68 @@ NDArray_ToGD(NDArray *a, NDArray *n_alpha, zval *output) {
 
 #endif
 
+/**
+ * Create a new NDArray Descriptor
+ *
+ * @param numElements
+ * @param elSize
+ * @param type
+ * @return
+ */
+NDArrayDescriptor* _Create_Descriptor(long numElements, int elsize, const char* type) {
+    NDArrayDescriptor* ndArrayDescriptor = emalloc(sizeof(NDArrayDescriptor));
+    ndArrayDescriptor->elsize = elsize;
+    ndArrayDescriptor->numElements = numElements;
+    ndArrayDescriptor->type = type;
+    return ndArrayDescriptor;
+}
+
+NDArray* NDArray_create(int* shape, int ndim, const char* type, const int device) {
+    NDArray* rtn;
+    int type_size = get_type_size(type);
+
+    if (shape == NULL) {
+        return NULL;
+    }
+
+    long total_num_elements = shape[0];
+
+    if (ndim == 0) {
+        total_num_elements = 1;
+    }
+
+    // Calculate number of elements
+    for (int i = 1; i < ndim; i++) {
+        total_num_elements = total_num_elements * shape[i];
+    }
+
+    rtn = emalloc(sizeof(NDArray));
+    rtn->descriptor = _Create_Descriptor(total_num_elements, type_size, type);
+    rtn->flags = 0;
+    rtn->ndim = ndim;
+    rtn->dimensions = shape;
+    rtn->refcount = 1;
+    rtn->base = NULL;
+    rtn->device = device;
+    rtn->strides = Generate_Strides(shape, ndim, type_size);
+    NDArrayIterator_INIT(rtn);
+    return rtn;
+}
+
+void NDArray_enableFlags(NDArray * arr, int flags) {
+    arr->flags |= flags;
+}
+
+bool NDArray_checkFlags(const NDArray *arr, int flags)
+{
+    return (arr->flags & flags) == flags;
+}
+
+void NDArray_CLEARFLAGS(NDArray *arr, int flags) {
+    arr->flags &= ~flags;
+}
+
+
 char*
 convert_shape_to_string(int n, int const *vals, char *endin)
 {
@@ -650,15 +712,7 @@ NDArray_FREEDATA(NDArray *target) {
     target->data = NULL;
 }
 
-/**
- * Print NDArray or return the print string
- *
- * @param array
- * @param do_return
- * @return
- */
-char *
-NDArray_Print(NDArray *array, int do_return) {
+char* NDArray_Print(NDArray *array, int do_return) {
     assert(array != NULL);
     char *str;
 
@@ -1064,11 +1118,11 @@ NDArray_ToGPU(NDArray *target) {
     new_shape = emalloc(sizeof(int) * NDArray_NDIM(target));
     memcpy(new_shape, NDArray_SHAPE(target), sizeof(int) * NDArray_NDIM(target));
 
-    NDArray *rtn = NDArray_Zeros(new_shape, n_ndim, NDARRAY_TYPE_FLOAT32, NDArray_DEVICE(target));
+    NDArray *rtn = NDArray_Zeros(new_shape, n_ndim, NDArray_TYPE(target), NDArray_DEVICE(target));
     rtn->device = NDARRAY_DEVICE_GPU;
 
-    vmalloc((void **) &tmp_gpu, NDArray_NUMELEMENTS(target) * sizeof(float));
-    cudaMemcpy(tmp_gpu, NDArray_FDATA(target), NDArray_NUMELEMENTS(target) * sizeof(float), cudaMemcpyHostToDevice);
+    vmalloc((void **) &tmp_gpu, NDArray_NUMELEMENTS(target) * NDArray_ELSIZE(target));
+    cudaMemcpy(tmp_gpu, NDArray_FDATA(target), NDArray_NUMELEMENTS(target) * NDArray_ELSIZE(target), cudaMemcpyHostToDevice);
     cudaError_t err = cudaDeviceSynchronize();
     if (err != cudaSuccess) {
         zend_throw_error(NULL, "Error synchronizing: %s\n", cudaGetErrorString(err));
@@ -1398,7 +1452,7 @@ int
 NDArray_Overwrite(NDArray *target, NDArray *values) {
 
     if (NDArray_NDIM(values) == 0) {
-        NDArray_Fill(target, NDArray_GetFloatScalar(values));
+        NDArray_FillFloat(target, NDArray_GetFloatScalar(values));
         return 1;
     }
 
@@ -1714,8 +1768,8 @@ NDArray_CreateMultiSortedStridePerm(int narrays, NDArray **arrays,
  */
 static int _nd_stride_sort_item_comparator(const void *a, const void *b)
 {
-    int astride = ((const ndarray_stride_sort_item *)a)->stride,
-        bstride = ((const ndarray_stride_sort_item *)b)->stride;
+    int astride = ((const NDArrayStrideSortItem *)a)->stride,
+        bstride = ((const NDArrayStrideSortItem *)b)->stride;
 
     /* Sort the absolute value of the strides */
     if (astride < 0) {
@@ -1730,8 +1784,8 @@ static int _nd_stride_sort_item_comparator(const void *a, const void *b)
          * Make the qsort stable by next comparing the perm order.
          * (Note that two perm entries will never be equal)
          */
-        int aperm = ((const ndarray_stride_sort_item *)a)->perm,
-                bperm = ((const ndarray_stride_sort_item *)b)->perm;
+        int aperm = ((const NDArrayStrideSortItem *)a)->perm,
+                bperm = ((const NDArrayStrideSortItem *)b)->perm;
         return (aperm < bperm) ? -1 : 1;
     }
     if (astride > bstride) {
@@ -1742,7 +1796,7 @@ static int _nd_stride_sort_item_comparator(const void *a, const void *b)
 
 void
 NDArray_CreateSortedStridePerm(int ndim, int const *strides,
-                               ndarray_stride_sort_item *out_strideperm)
+    NDArrayStrideSortItem *out_strideperm)
 {
     int i;
 

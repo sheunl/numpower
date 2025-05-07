@@ -4,8 +4,6 @@
 #include <Zend/zend_types.h>
 #include "ndarray.h"
 
-NDArray *NDArrayFactory_CreateFromZval(zval* php_object, const char* type);
-NDArray *NDArrayFactory_CreateFromZendArray(zend_array *ht, int ndim, const char* type);
 NDArray* NDArrayFactory_CreateFromDoubleScalar(double scalar);
 
 
@@ -21,7 +19,7 @@ NDArray* NDArray_StandardNormal(int* shape, int ndim);
 NDArray* NDArray_Poisson(double lam, int* shape, int ndim);
 NDArray* NDArray_Uniform(double low, double high, int* shape, int ndim);
 NDArray* NDArray_Diag(NDArray *a);
-NDArray* NDArray_Fill(NDArray *a, float fill_value);
+NDArray* NDArray_FillFloat(NDArray *a, float fill_value);
 NDArray* NDArray_Full(int *shape, int ndim,  double fill_value);
 NDArray* NDArray_CreateFromDoubleScalar(double scalar);
 NDArray* NDArray_CreateFromLongScalar(long scalar);

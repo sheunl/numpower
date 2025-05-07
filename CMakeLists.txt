@@ -28,6 +28,10 @@ add_executable(numpower
         src/ndmath/statistics.h
         src/sanitizers.c
         src/sanitizers.h
+        src/ndarray/frontend/ndarray_factory.c
+        src/ndarray/frontend/ndarray_factory.h
+        src/ndarray/frontend/manipulations.c
+        src/ndarray/frontend/manipulations.h
         src/buffer.c
         src/buffer.h
         src/debug.c

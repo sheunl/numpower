@@ -33,7 +33,10 @@ float cuda_min_float(float *a, int nelements);
 void cuda_pow_float(int nblocks, float *a, float *b, float *rtn, int nelements);
 int cuda_equal_float(int nblocks, float *a, float *b, int nelements);
 void cuda_sum_float(int nblocks, float *a, float *rtn, int nelements);
+
 void cuda_fill_float(float *a, float value, int n);
+void cuda_fill_double(double *a, double value, int n);
+
 int cuda_det_float(float *a, float *result, int n);
 void cuda_float_sin(int nblocks, float *d_array);
 void cuda_float_cos(int nblocks, float *d_array);

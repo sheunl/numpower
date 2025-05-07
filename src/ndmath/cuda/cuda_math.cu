@@ -893,6 +893,14 @@ void fill_float_kernel(float* array, int n, float value) {
     }
 }
 
+__global__
+void fill_float_kernel_double(double* array, int n, double value) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if(idx < n) {
+        array[idx] = value;
+    }
+}
+
 extern "C" {
 
     int
@@ -968,12 +976,19 @@ extern "C" {
         return 1;
     }
 
-    void
-    cuda_fill_float(float *a, float value, int n) {
+    void cuda_fill_float(float *a, float value, int n) {
         int blockSize = 256;
         int gridSize = (n + blockSize - 1) / blockSize;
 
         fill_float_kernel<<<gridSize, blockSize>>>(a, n, value);
+        cudaDeviceSynchronize();
+    }
+
+    void cuda_fill_double(double *a, double value, int n) {
+        int blockSize = 256;
+        int gridSize = (n + blockSize - 1) / blockSize;
+
+        fill_float_kernel_double<<<gridSize, blockSize>>>(a, n, value);
         cudaDeviceSynchronize();
     }
 

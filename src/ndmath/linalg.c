@@ -56,7 +56,7 @@ NDArray_FMatmul(NDArray *a, NDArray *b) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
-    if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
+    if (NDArray_DEVICE(a) != NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
         static cublasHandle_t handle = NULL;
         static bool handle_initialized = false;
@@ -77,6 +77,7 @@ NDArray_FMatmul(NDArray *a, NDArray *b) {
             &beta,
             (float*)NDArray_FDATA(result), n
         );
+
 #endif
     } else {
         cblas_sgemm(
@@ -443,7 +444,7 @@ NDArray_L1Norm(NDArray* target) {
     NDArray *slice;
     while(!NDArrayIterator_ISDONE(ab)) {
         slice = NDArrayIterator_GET(ab);
-        results[ab->iterator->current_index] = NDArray_Sum_Float(slice);
+        results[ab->iterator->currentIndex] = NDArray_Sum_Float(slice);
         NDArray_FREE(slice);
         NDArrayIterator_NEXT(ab);
     }

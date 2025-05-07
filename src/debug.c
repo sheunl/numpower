@@ -41,7 +41,7 @@ NDArray_Dump(NDArray* array) {
     printf("NDArray.descriptor.elsize\t%d\n", array->descriptor->elsize);
     printf("NDArray.descriptor.numElements\t%ld\n", array->descriptor->numElements);
     printf("NDArray.descriptor.type\t\t%s\n", array->descriptor->type);
-    printf("NDArray.iterator.current_index\t%d", array->iterator->current_index);
+    printf("NDArray.iterator.current_index\t%d", array->iterator->currentIndex);
     printf("\n=================================================\n");
 }
 
@@ -424,6 +424,6 @@ NDArray_DumpDevices() {
 void
 NDArrayIterator_DUMP(NDArray *a) {
     printf("\n====================================\n");
-    printf("iterator.current_index:\t\t%d",a->iterator->current_index);
+    printf("iterator.current_index:\t\t%d",a->iterator->currentIndex);
     printf("\n====================================\n");
 }

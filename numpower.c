@@ -11,7 +11,7 @@
 #include "numpower_arginfo.h"
 
 // NDArrayFactory_CreateFromZval, Create_NDArray_FromZval, NDArray_CreateFromLongScalar, NDArray_CreateFromDoubleScalar
-// NDArray_Zeros,                 NDArray_Fill,            NDArray_Identity,             NDArray_Normal,
+// NDArray_Zeros,                 NDArray_FillFloat,       NDArray_Identity,             NDArray_Normal,
 // NDArray_TruncatedNormal,       NDArray_Binomial,        NDArray_StandardNormal,       NDArray_Poisson,
 // NDArray_Uniform,               NDArray_Diag,            NDArray_Full,                 NDArray_Ones,
 // NDArray_Arange,                NDArray_Copy,            
@@ -85,6 +85,12 @@
 // zval_parameter_to_normalized_axis_argument
 #include "src/sanitizers.h"
 
+// NDArrayFactory_CreateFromZval
+#include "src/ndarray/frontend/ndarray_factory.h"
+
+// NDArray_fill
+#include "src/ndarray/frontend/manipulations.h"
+
 #ifdef HAVE_CUBLAS
   // cuda_float_sin,        cuda_float_cos,     cuda_float_tan,     cuda_float_arcsin,  cuda_float_arccos,
   // cuda_float_arctan,     cuda_float_arctan2, cuda_float_degrees, cuda_float_sinh,    cuda_float_cosh,
@@ -114,13 +120,59 @@
 	ZEND_PARSE_PARAMETERS_END()
 #endif
 
+PHPAPI zend_class_entry *phpsci_ce_NDArray;
+PHPAPI zend_class_entry *phpsci_ce_NumPower;
+PHPAPI zend_class_entry *phpsci_ce_ArithmeticOperand;
+
 static zend_object_handlers ndarray_object_handlers;
 static zend_object_handlers numpower_object_handlers;
 static zend_object_handlers arithmetic_object_handlers;
 
-int
-get_object_uuid(zval* obj) {
-    return Z_LVAL_P(OBJ_PROP_NUM(Z_OBJ_P(obj), 0));
+/**
+ * @brief Constructor for the NDArray class.
+ * 
+ * ```
+ * __construct(array|int|float|bool|NDArray|GdImage $input, string $dataType = "float32"): NDArray
+ * ```
+ * 
+ * @param input    The input data to create the NDArray.
+ * @param dataType The data type of the NDArray. Default is "float32".
+ *                 Available values is "float32" and "double64".
+ */
+ZEND_BEGIN_ARG_INFO(arginfo_construct, 1)
+    ZEND_ARG_INFO(0, input)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dataType, IS_STRING, 0, "float32")
+ZEND_END_ARG_INFO();
+PHP_METHOD(NDArray, __construct) {
+    zend_object *obj = Z_OBJ_P(ZEND_THIS);
+    zval *input;
+
+    char *dataType;
+    size_t dataTypeLen;
+    const char *ndarrayDataType;
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_ZVAL(input)
+    Z_PARAM_OPTIONAL
+        Z_PARAM_STRING(dataType, dataTypeLen)
+    ZEND_PARSE_PARAMETERS_END();
+
+    if (ZEND_NUM_ARGS() < 2) {
+        dataType = "float32";
+        dataTypeLen = sizeof("float32") - 1;
+    }
+
+    if (dataTypeLen == 7 && memcmp(dataType, "float32", 7) == 0) {
+        ndarrayDataType = NDARRAY_TYPE_FLOAT32;
+    } else if (dataTypeLen == 8 && memcmp(dataType, "double64", 8) == 0) {
+        ndarrayDataType = NDARRAY_TYPE_DOUBLE64;
+    } else {
+        zend_throw_error(NULL, "Invalid data type. Supported types are: float32, double64");
+    }
+
+    NDArray* array = NDArrayFactory_createFromZval(input, ndarrayDataType);
+
+    ZVAL_LONG(OBJ_PROP_NUM(obj, 0), NDArray_UUID(array));
 }
 
 /**
@@ -170,29 +222,63 @@ void ndarray_init_new_object(NDArray* array, zval* return_value) {
     }
 }
 
-/**
- * @brief Converts a zval value to an NDArray object.
- *
- * This function handles several data types:
- * - Arrays (IS_ARRAY) — creates an NDArray from an array.
- * - Long integers (IS_LONG) — creates an NDArray from a long integer value.
- * - Doubles (IS_DOUBLE) — creates an NDArray from a double value.
- * - Objects (IS_OBJECT) — if the object is an instance of the NDArray class, it returns its buffer.
- * If the object is a GD image (GdImage), it creates an NDArray from the image.
- *
- * @param[in] obj A pointer to the zval value to be converted to an NDArray.
- * 
- * @return A pointer to the created NDArray object, or NULL if conversion fails.
- * 
- * @throw Error If the type is unsupported.
- */
-NDArray* ZVAL_OBJECT_TO_NDARRAY(zval* obj, const char *type) {
-    if (Z_TYPE_P(obj) == IS_ARRAY) {
-        return NDArrayFactory_CreateFromZval(obj, type);
+ZEND_BEGIN_ARG_INFO(arginfo_gpu, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(NDArray, gpu) {
+    NDArray *rtn;
+    zval *obj_zval = getThis();
+
+    ZEND_PARSE_PARAMETERS_START(0, 0)
+    ZEND_PARSE_PARAMETERS_END();
+
+#ifdef HAVE_CUBLAS
+    NDArray* ndarray = NDArrayFactory_restoreFromZval(obj_zval);
+
+    if (ndarray == NULL) {
+        return;
     }
     
-    zend_throw_error(NULL, "argument must be an array, long, double, gdimage or NDArray.");
-    return NULL;
+    rtn = NDArray_ToGPU(ndarray);
+
+    ndarray_init_new_object(rtn, return_value);
+#else
+    zend_throw_error(NULL, "No GPU device available or CUDA not enabled");
+    RETURN_NULL();
+#endif
+}
+
+/**
+ * @brief Fills the NDArray with a specified value.
+ * 
+ * ```
+ * fill(float|int|bool $value): void
+ * ```
+ * 
+ * @param value The value to fill the NDArray with.
+ */
+ZEND_BEGIN_ARG_INFO(arginfo_fill, 1)
+    ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
+PHP_METHOD(NDArray, fill) {
+    zval* value;
+    zval* objZval = getThis();
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(value)
+    ZEND_PARSE_PARAMETERS_END();
+
+    if (Z_TYPE(*value) != IS_LONG && Z_TYPE(*value) != IS_DOUBLE && Z_TYPE(*value) != IS_TRUE && Z_TYPE(*value) != IS_FALSE) {
+        zend_throw_error(NULL, "Invalid value type. Supported types are: float, int, bool");
+        return;
+    }
+    
+    NDArray* ndarray = NDArrayFactory_restoreFromZval(objZval);
+
+    if (ndarray == NULL) {
+        return;
+    }
+
+    NDArray_fillByZval(ndarray, value);
 }
 
 NDArray* ZVAL_TO_NDARRAY(zval* obj) {
@@ -208,7 +294,7 @@ NDArray* ZVAL_TO_NDARRAY(zval* obj) {
     if (Z_TYPE_P(obj) == IS_OBJECT) {
         zend_class_entry *ce = Z_OBJCE_P(obj);
         if (instanceof_function(ce, phpsci_ce_NDArray)) {
-            return buffer_get(get_object_uuid(obj));
+            return buffer_get(getObjectUuid(obj));
         }
 #ifdef HAVE_GD
         zend_string* class_name = Z_OBJ_P(obj)->ce->name;
@@ -254,7 +340,7 @@ ARRAY_OF_NDARRAYS(zval *array, int *size) {
             zend_class_entry* ce = NULL;
             ce = Z_OBJCE_P(val);
             if (ce == phpsci_ce_NDArray) {
-                rtn[cur_index] = buffer_get(get_object_uuid(val));
+                rtn[cur_index] = buffer_get(getObjectUuid(val));
             }
         }
         cur_index++;
@@ -460,9 +546,11 @@ NDArray* ZVALUUID_TO_NDARRAY(zval* obj) {
     if (Z_TYPE_P(obj) == IS_LONG) {
         return buffer_get(Z_LVAL_P(obj));
     }
+
     if (Z_TYPE_P(obj) == IS_OBJECT) {
-        return buffer_get(get_object_uuid(obj));
+        return buffer_get(getObjectUuid(obj));
     }
+    
     return NULL;
 }
 
@@ -552,69 +640,6 @@ PHP_METHOD(NumPower, __construct) {
     ZEND_PARSE_PARAMETERS_END();
 }
 
-/**
- * @brief Constructor for the NDArray class.
- */
-ZEND_BEGIN_ARG_INFO(arginfo_construct, 1)
-    ZEND_ARG_INFO(0, input)
-    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dataType, IS_STRING, 0, "double64")
-ZEND_END_ARG_INFO();
-PHP_METHOD(NDArray, __construct) {
-
-    zend_object *obj = Z_OBJ_P(ZEND_THIS);
-    zval *input;
-
-    char *dataType;
-    size_t dataTypeLen;
-    const char *ndarrayDataType;
-
-    ZEND_PARSE_PARAMETERS_START(1, 2)
-        Z_PARAM_ZVAL(input)
-    Z_PARAM_OPTIONAL
-        Z_PARAM_STRING(dataType, dataTypeLen)
-    ZEND_PARSE_PARAMETERS_END();
-
-    if (ZEND_NUM_ARGS() < 2) {
-        dataType = "double64";
-        dataTypeLen = sizeof("double64") - 1;
-    }
-
-    if (dataTypeLen == 7 && memcmp(dataType, "float32", 7) == 0) {
-        ndarrayDataType = NDARRAY_TYPE_FLOAT32;
-    } else if (dataTypeLen == 8 && memcmp(dataType, "double64", 8) == 0) {
-        ndarrayDataType = NDARRAY_TYPE_DOUBLE64;
-    } else {
-        zend_throw_error(NULL, "Invalid data type. Supported types are: float32, double64");
-        return;
-    }
-
-    NDArray* array = ZVAL_OBJECT_TO_NDARRAY(input, ndarrayDataType);
-    if (array == NULL) {
-        zend_throw_error(NULL, "Invalid NDArray object");
-        return;
-    }
-
-    add_to_buffer(array);
-    ZVAL_LONG(OBJ_PROP_NUM(obj, 0), NDArray_UUID(array));
-}
-
-ZEND_BEGIN_ARG_INFO(arginfo_fill, 1)
-ZEND_ARG_INFO(0, value)
-ZEND_END_ARG_INFO();
-PHP_METHOD(NDArray, fill) {
-    double value;
-    NDArray *rtn;
-    zval *obj_zval = getThis();
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-    Z_PARAM_DOUBLE(value)
-    ZEND_PARSE_PARAMETERS_END();
-    NDArray* array = ZVAL_TO_NDARRAY(obj_zval);
-    if (array == NULL) {
-        return;
-    }
-    NDArray_Fill(array, (float)value);
-}
-
 ZEND_BEGIN_ARG_INFO(arginfo_toArray, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(NDArray, toArray) {
@@ -669,26 +694,6 @@ PHP_METHOD(NDArray, toImage) {
     if (alpha != NULL) {
         CHECK_INPUT_AND_FREE(alpha, n_alpha);
     }
-}
-
-ZEND_BEGIN_ARG_INFO(arginfo_gpu, 0)
-ZEND_END_ARG_INFO();
-PHP_METHOD(NDArray, gpu) {
-    NDArray *rtn;
-    zval *obj_zval = getThis();
-    ZEND_PARSE_PARAMETERS_START(0, 0)
-    ZEND_PARSE_PARAMETERS_END();
-#ifdef HAVE_CUBLAS
-    NDArray* array = ZVAL_TO_NDARRAY(obj_zval);
-    if (array == NULL) {
-        return;
-    }
-    rtn = NDArray_ToGPU(array);
-    ndarray_init_new_object(rtn, return_value);
-#else
-    zend_throw_error(NULL, "No GPU device available or CUDA not enabled");
-    RETURN_NULL();
-#endif
 }
 
 ZEND_BEGIN_ARG_INFO(arginfo_cpu, 0)
@@ -847,7 +852,7 @@ PHP_FUNCTION(print_r_) {
         if (Z_TYPE_P(var) == IS_OBJECT) {
             zend_class_entry* classEntry = Z_OBJCE_P(var);
             if (!strcmp(classEntry->name->val, "NDArray")) {
-                target = buffer_get(get_object_uuid(var));
+                target = buffer_get(getObjectUuid(var));
                 RETURN_STRING(NDArray_Print(target, 1));
             }
         }
@@ -856,7 +861,7 @@ PHP_FUNCTION(print_r_) {
         if (Z_TYPE_P(var) == IS_OBJECT) {
             zend_class_entry* classEntry = Z_OBJCE_P(var);
             if (!strcmp(classEntry->name->val, "NDArray")) {
-                target = buffer_get(get_object_uuid(var));
+                target = buffer_get(getObjectUuid(var));
                 NDArray_Print(target, 0);
                 RETURN_TRUE;
             }
@@ -5107,7 +5112,7 @@ PHP_METHOD(NDArray, key) {
     ZEND_PARSE_PARAMETERS_END();
     zval *obj_uuid = OBJ_PROP_NUM(obj, 0);
     NDArray* ndarray = ZVALUUID_TO_NDARRAY(obj_uuid);
-    RETURN_LONG(ndarray->php_iterator->current_index);
+    RETURN_LONG(ndarray->php_iterator->currentIndex);
 }
 
 PHP_METHOD(NDArray, next) {
@@ -5165,7 +5170,7 @@ PHP_METHOD(NDArray, offsetGet) {
             zend_throw_error(NULL, "Index out of bounds");
             return;
         }
-        ndarray->iterator->current_index = (int) Z_LVAL_P(offset);
+        ndarray->iterator->currentIndex = (int) Z_LVAL_P(offset);
         NDArray *rtn = NDArrayIterator_GET(ndarray);
         NDArrayIterator_REWIND(ndarray);
         ndarray_init_new_object(rtn, return_value);
@@ -5195,7 +5200,7 @@ PHP_METHOD(NDArray, offsetSet) {
             return;
         }
         NDArray* nd_value = ZVAL_TO_NDARRAY(value);
-        ndarray->iterator->current_index = (int)zval_get_long(offset);
+        ndarray->iterator->currentIndex = (int)zval_get_long(offset);
         NDArray *rtn = NDArrayIterator_GET(ndarray);
         NDArrayIterator_REWIND(ndarray);
         NDArray_Overwrite(rtn, nd_value);
@@ -5277,6 +5282,7 @@ PHP_METHOD(NDArray, __toString) {
     NDArray* ndarray = ZVALUUID_TO_NDARRAY(obj_uuid);
     
     char *result = NDArray_Print(ndarray, 1);
+
     RETVAL_STRING(result);
     efree(result);
 }
