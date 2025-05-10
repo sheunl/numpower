@@ -299,6 +299,9 @@ NDArray* Create_NDArray_FromZendArray(zend_array* ht, int ndim) {
         array->data = NULL;
         array->descriptor->numElements = 0;
     }
+
+    array->uuid = -1;
+
     return array;
 }
 

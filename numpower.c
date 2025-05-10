@@ -294,10 +294,7 @@ NDArray* ZVAL_TO_NDARRAY(zval* obj) {
     if (Z_TYPE_P(obj) == IS_OBJECT) {
         zend_class_entry *ce = Z_OBJCE_P(obj);
         if (instanceof_function(ce, phpsci_ce_NDArray)) {
-            NDArray* nda = buffer_get(getObjectUuid(obj));
-            NDArray* newNda = NDArray_Copy(nda, NDArray_DEVICE(nda));
-
-            return newNda;
+            return buffer_get(getObjectUuid(obj));
         }
 #ifdef HAVE_GD
         zend_string* class_name = Z_OBJ_P(obj)->ce->name;
@@ -5023,7 +5020,11 @@ PHP_METHOD(NumPower, array) {
     if (nda == NULL) {
         return;
     }
-    ndarray_init_new_object(nda, return_value);
+    if (nda->uuid != -1) {
+        ZVAL_COPY(return_value, a);
+    } else {
+        ndarray_init_new_object(nda, return_value);
+    }
 }
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_slice, 0, 0, IS_MIXED, 0)
