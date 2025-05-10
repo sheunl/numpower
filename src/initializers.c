@@ -302,6 +302,53 @@ NDArray* Create_NDArray_FromZendArray(zend_array* ht, int ndim) {
     return array;
 }
 
+zend_bool validate_array(zval *arr) {
+    if (Z_TYPE_P(arr) != IS_ARRAY) {
+        return 0;
+    }
+
+    HashTable *ht = Z_ARRVAL_P(arr);
+    if (ht->nNumOfElements == 0) {
+        return 1;
+    }
+
+    zval *first_elem = NULL;
+    zend_ulong idx;
+    zend_string *key;
+
+    ZEND_HASH_FOREACH_KEY_VAL(ht, idx, key, first_elem) {
+        break;
+    } ZEND_HASH_FOREACH_END();
+
+    if (!first_elem) return 1;
+
+    int first_type = Z_TYPE_P(first_elem);
+    uint32_t expected_count = 0;
+
+    if (first_type == IS_ARRAY) {
+        expected_count = zend_hash_num_elements(Z_ARRVAL_P(first_elem));
+    }
+
+    ZEND_HASH_FOREACH_VAL(ht, first_elem) {
+        if (Z_TYPE_P(first_elem) != first_type) {
+            return 0;
+        }
+
+        if (first_type == IS_ARRAY) {
+            HashTable *nested_ht = Z_ARRVAL_P(first_elem);
+            if (zend_hash_num_elements(nested_ht) != expected_count) {
+                return 0;
+            }
+
+            if (!validate_array(first_elem)) {
+                return 0;
+            }
+        }
+    } ZEND_HASH_FOREACH_END();
+
+    return 1;
+}
+
 /**
  * Create NDArray from PHP Object (zval)
  *
@@ -311,6 +358,10 @@ NDArray* Create_NDArray_FromZendArray(zend_array* ht, int ndim) {
 NDArray* Create_NDArray_FromZval(zval* php_object) {
     NDArray* new_array = NULL;
     if (Z_TYPE_P(php_object) == IS_ARRAY) {
+        int res = validate_array(php_object);
+        if (!res) {
+            zend_error(E_ERROR, "FUCK!");
+        }
         new_array = Create_NDArray_FromZendArray(Z_ARRVAL_P(php_object), get_num_dims_from_zval(php_object));
     }
     return new_array;
