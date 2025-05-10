@@ -294,7 +294,10 @@ NDArray* ZVAL_TO_NDARRAY(zval* obj) {
     if (Z_TYPE_P(obj) == IS_OBJECT) {
         zend_class_entry *ce = Z_OBJCE_P(obj);
         if (instanceof_function(ce, phpsci_ce_NDArray)) {
-            return buffer_get(getObjectUuid(obj));
+            NDArray* nda = buffer_get(getObjectUuid(obj));
+            NDArray* newNda = NDArray_Copy(nda, NDArray_DEVICE(nda));
+
+            return newNda;
         }
 #ifdef HAVE_GD
         zend_string* class_name = Z_OBJ_P(obj)->ce->name;

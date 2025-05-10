@@ -105,6 +105,7 @@ typedef struct NDArray {
     NDArrayIterator*   php_iterator;
     int                refcount;
     int                device;
+    int                alexus;
 } NDArray;
 
 NDArray* NDArray_create(int *shape, int ndim, const char *type, int device);

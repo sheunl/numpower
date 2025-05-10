@@ -289,7 +289,7 @@ NDArray* Create_NDArray_FromZendArray(zend_array* ht, int ndim) {
 
     // Calculate number of elements
     for (int i = 1; i < ndim; i++) {
-        total_num_elements = total_num_elements * shape[i];
+        total_num_elements *= shape[i];
     }
     NDArray* array = Create_NDArray(shape, ndim, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
     if (ndim != 0) {
@@ -523,8 +523,8 @@ NDArray_Empty(int *shape, int ndim, const char *type, int device) {
 #ifdef HAVE_CUBLAS
             rtn->device = NDARRAY_DEVICE_GPU;
             vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(rtn) * sizeof(double));
+#endif
         }
-#endif  
     }
     return rtn;
 }
@@ -533,8 +533,7 @@ NDArray_Empty(int *shape, int ndim, const char *type, int device) {
  * @param a
  * @return
  */
-NDArray*
-NDArray_EmptyLike(NDArray *a) {
+NDArray* NDArray_EmptyLike(NDArray *a) {
     int *output_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
     memcpy(output_shape, NDArray_SHAPE(a), sizeof(int) * NDArray_NDIM(a));
     return NDArray_Empty(output_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
