@@ -395,9 +395,11 @@ static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, z
         } else {
             rtn = NDArray_Add_Float(nda, ndb);
         }
+            rtn->uuid = -1;
         break;
     case ZEND_SUB:
         rtn = NDArray_Subtract_Float(nda, ndb);
+            rtn->uuid = -1;
         break;
     case ZEND_MUL:
         rtn = NDArray_Multiply_Float(nda, ndb);
@@ -405,12 +407,15 @@ static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, z
         break;
     case ZEND_DIV:
         rtn = NDArray_Divide_Float(nda, ndb);
+            rtn->uuid = -1;
         break;
     case ZEND_POW:
         rtn = NDArray_Pow_Float(nda, ndb);
+            rtn->uuid = -1;
         break;
     case ZEND_MOD:
         rtn = NDArray_Mod_Float(nda, ndb);
+            rtn->uuid = -1;
         break;
     default:
         return FAILURE;
@@ -3762,32 +3767,39 @@ PHP_METHOD(NumPower, divide) {
  * NumPower::add
  */
 ZEND_BEGIN_ARG_INFO(arginfo_ndarray_add, 0)
-ZEND_ARG_INFO(0, a)
-ZEND_ARG_INFO(0, b)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
 ZEND_END_ARG_INFO()
 PHP_METHOD(NumPower, add) {
     NDArray *rtn = NULL;
     zval *a, *b;
-    long axis;
+
     ZEND_PARSE_PARAMETERS_START(2, 2)
-    Z_PARAM_ZVAL(a)
-    Z_PARAM_ZVAL(b)
+        Z_PARAM_ZVAL(a)
+        Z_PARAM_ZVAL(b)
     ZEND_PARSE_PARAMETERS_END();
+
     NDArray *nda = ZVAL_TO_NDARRAY(a);
     NDArray *ndb = ZVAL_TO_NDARRAY(b);
+
     if (nda == NULL) {
         return;
     }
+
     if (ndb == NULL) {
         CHECK_INPUT_AND_FREE(a, nda);
         return;
     }
+
     if (!NDArray_IsBroadcastable(nda, ndb)) {
         zend_throw_error(NULL, "Can´t broadcast array.");
     }
+
     rtn = NDArray_Add_Float(nda, ndb);
+    rtn->uuid = -1;
     CHECK_INPUT_AND_FREE(a, nda);
     CHECK_INPUT_AND_FREE(b, ndb);
+
     ndarray_init_new_object(rtn, return_value);
 }
 
