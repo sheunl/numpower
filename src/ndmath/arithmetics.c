@@ -465,6 +465,7 @@ NDArray_Multiply_Float(NDArray* a, NDArray* b) {
 
     // Create a new NDArray to store the result
     NDArray *result = (NDArray *) emalloc(sizeof(NDArray));
+
     result->strides = (int *) emalloc(a_broad->ndim * sizeof(int));
     result->dimensions = (int *) emalloc(a_broad->ndim * sizeof(int));
     result->ndim = a->ndim;
@@ -534,6 +535,7 @@ NDArray_Multiply_Float(NDArray* a, NDArray* b) {
     if (broadcasted != NULL) {
         NDArray_FREE(broadcasted);
     }
+
     return result;
 }
 

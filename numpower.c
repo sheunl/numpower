@@ -383,20 +383,8 @@ static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, z
         return FAILURE;
     }
 
-    if (NDArray_TYPE(nda) != NDArray_TYPE(ndb)) {
-        if (NDArray_TYPE(nda) == NDARRAY_TYPE_FLOAT32) {
-            NDArray *temp = NDArray_Zeros(NDArray_SHAPE(nda), NDArray_NDIM(nda), NDARRAY_TYPE_DOUBLE64, NDArray_DEVICE(nda));
-            for (int i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-                NDArray_DDATA(temp)[i] = (double)NDArray_FDATA(nda)[i];
-            }
-            nda = temp;
-        } else {
-            NDArray *temp = NDArray_Zeros(NDArray_SHAPE(ndb), NDArray_NDIM(ndb), NDARRAY_TYPE_DOUBLE64, NDArray_DEVICE(ndb));
-            for (int i = 0; i < NDArray_NUMELEMENTS(ndb); i++) {
-                NDArray_DDATA(temp)[i] = (double)NDArray_FDATA(ndb)[i];
-            }
-            ndb = temp;
-        }
+    if (!NDArray_IsBroadcastable(nda, ndb)) {
+        zend_throw_error(NULL, "Can´t broadcast array.");
     }
 
     NDArray *rtn = NULL;
@@ -427,14 +415,11 @@ static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, z
     default:
         return FAILURE;
     }
-        printf("RC 1:%d\n",GC_REFCOUNT(obj));
+
     CHECK_INPUT_AND_FREE(op1, nda);
     CHECK_INPUT_AND_FREE(op2, ndb);
-        printf("RC 2:%d\n",GC_REFCOUNT(obj));
-    if (GC_REFCOUNT(obj) == 1) {
-        printf("UUID:%d\n",rtn->uuid);
+    if (GC_REFCOUNT(obj) > 1) {
         rtn->uuid = nda->uuid;
-        printf("UUID:%d\n",rtn->uuid);
         rtn->data = nda->data;
     }
     ndarray_init_new_object(rtn, result);
@@ -3703,33 +3688,41 @@ PHP_METHOD(NumPower, pow) {
  * NumPower::multiply
  */
 ZEND_BEGIN_ARG_INFO(arginfo_ndarray_multiply, 0)
-ZEND_ARG_INFO(0, a)
-ZEND_ARG_INFO(0, b)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
 ZEND_END_ARG_INFO()
 PHP_METHOD(NumPower, multiply) {
     NDArray *rtn = NULL;
     zval *a, *b;
     long axis;
+
     ZEND_PARSE_PARAMETERS_START(2, 2)
-    Z_PARAM_ZVAL(a)
-    Z_PARAM_ZVAL(b)
+        Z_PARAM_ZVAL(a)
+        Z_PARAM_ZVAL(b)
     ZEND_PARSE_PARAMETERS_END();
+
     NDArray *nda = ZVAL_TO_NDARRAY(a);
     NDArray *ndb = ZVAL_TO_NDARRAY(b);
+
     if (nda == NULL) {
         return;
     }
+
     if (ndb == NULL) {
         CHECK_INPUT_AND_FREE(a, nda);
         return;
     }
+
     if (!NDArray_IsBroadcastable(nda, ndb)) {
         zend_throw_error(NULL, "Can´t broadcast array.");
     }
+
     rtn = NDArray_Multiply_Float(nda, ndb);
 
     CHECK_INPUT_AND_FREE(a, nda);
     CHECK_INPUT_AND_FREE(b, ndb);
+
+    rtn->uuid = -1;
     ndarray_init_new_object(rtn, return_value);
 }
 
