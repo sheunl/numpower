@@ -824,7 +824,7 @@ ZEND_BEGIN_ARG_INFO(arginfo_reshape, 2)
 ZEND_ARG_INFO(0, a)
 ZEND_ARG_INFO(0, shape_zval)
 ZEND_END_ARG_INFO();
-PHP_METHOD(NDArray, reshape) {
+PHP_METHOD(NumPower, reshape) {
     int *new_shape;
     zval *shape_zval;
     zval *a;
@@ -5336,6 +5336,7 @@ static const zend_function_entry class_NumPower_methods[] = {
     ZEND_ME(NumPower, argmin, arginfo_ndarray_argmin, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
 
     // MANIPULATION
+    ZEND_ME(NumPower, reshape, arginfo_reshape, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     ZEND_ME(NumPower, copy, arginfo_ndarray_copy, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     ZEND_ME(NumPower, flatten, arginfo_ndarray_flat, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     ZEND_ME(NumPower, atleast1d, arginfo_ndarray_atleast_1d, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
@@ -5501,7 +5502,6 @@ static const zend_function_entry class_NDArray_methods[] = {
     ZEND_ME(NDArray, __serialize, arginfo_serialize, ZEND_ACC_PUBLIC)
     ZEND_ME(NDArray, __unserialize, arginfo_unserialize, ZEND_ACC_PUBLIC)
 
-    ZEND_ME(NDArray, reshape, arginfo_reshape, ZEND_ACC_PUBLIC)
     ZEND_ME(NDArray, toArray, arginfo_toArray, ZEND_ACC_PUBLIC)
     ZEND_ME(NDArray, toImage, arginfo_toImage, ZEND_ACC_PUBLIC)
     ZEND_ME(NDArray, slice, arginfo_slice, ZEND_ACC_PUBLIC)
