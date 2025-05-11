@@ -168,6 +168,7 @@ NDArray_Reshape(NDArray *target, int *new_shape, int ndim) {
 NDArray*
 NDArray_Flatten(NDArray *target) {
     NDArray *rtn = NDArray_Copy(target, NDArray_DEVICE(target));
+    rtn->uuid = -1;
     rtn->ndim = 1;
     if (NDArray_NDIM(target) == 0) {
         rtn->dimensions[0] = 1;
