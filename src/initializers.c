@@ -397,6 +397,7 @@ Create_NDArray(int* shape, int ndim, const char* type, const int device) {
     }
 
     rtn = emalloc(sizeof(NDArray));
+    rtn->uuid = -1;
     rtn->descriptor = Create_Descriptor(total_num_elements, type_size, type);
     rtn->flags = 0;
     rtn->ndim = ndim;

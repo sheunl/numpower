@@ -1517,19 +1517,21 @@ PHP_METHOD(NumPower, ones) {
  * @param return_value
  */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ndarray_arange, 0, 0, 1)
-ZEND_ARG_INFO(0, stop)
-ZEND_ARG_INFO(0, start)
-ZEND_ARG_INFO(0, step)
+    ZEND_ARG_INFO(0, stop)
+    ZEND_ARG_INFO(0, start)
+    ZEND_ARG_INFO(0, step)
 ZEND_END_ARG_INFO()
 PHP_METHOD(NumPower, arange) {
     NDArray *rtn = NULL;
     double start, stop, step;
+
     ZEND_PARSE_PARAMETERS_START(1, 3)
-    Z_PARAM_DOUBLE(stop)
+        Z_PARAM_DOUBLE(stop)
     Z_PARAM_OPTIONAL
-    Z_PARAM_DOUBLE(start)
-    Z_PARAM_DOUBLE(step)
+        Z_PARAM_DOUBLE(start)
+        Z_PARAM_DOUBLE(step)
     ZEND_PARSE_PARAMETERS_END();
+
     if (ZEND_NUM_ARGS() == 1) {
         start = 0.0f;
         step  = 1.0f;
@@ -1537,6 +1539,7 @@ PHP_METHOD(NumPower, arange) {
     if (ZEND_NUM_ARGS() == 2) {
         step  = 1.0f;
     }
+
     rtn = NDArray_Arange(start, stop, step);
     ndarray_init_new_object(rtn, return_value);
 }
