@@ -1,8 +1,8 @@
 --TEST--
-NDArray::standardNormal
+NumPower::standardNormal
 --FILE--
 <?php
-use NDArray as nd;
+use NumPower as nd;
 
 new class
 {
@@ -148,11 +148,11 @@ successful creation with 2-dim
 successful creation with 3-dim
 
 --- CASE 2 ---
-Error when passed shape is integer: NDArray::standardNormal(): Argument #1 ($shape) must be of type array, int given
-Error when passed shape is double: NDArray::standardNormal(): Argument #1 ($shape) must be of type array, float given
-Error when passed shape is string: NDArray::standardNormal(): Argument #1 ($shape) must be of type array, string given
-Error when passed shape is null: NDArray::standardNormal(): Argument #1 ($shape) must be of type array, null given
-Error when passed shape is object: NDArray::standardNormal(): Argument #1 ($shape) must be of type array, stdClass given
+Error when passed shape is integer: NumPower::standardNormal(): Argument #1 ($shape) must be of type array, int given
+Error when passed shape is double: NumPower::standardNormal(): Argument #1 ($shape) must be of type array, float given
+Error when passed shape is string: NumPower::standardNormal(): Argument #1 ($shape) must be of type array, string given
+Error when passed shape is null: NumPower::standardNormal(): Argument #1 ($shape) must be of type array, null given
+Error when passed shape is object: NumPower::standardNormal(): Argument #1 ($shape) must be of type array, stdClass given
 
 --- CASE 3 ---
 Error when shape value is array: Invalid parameter: Shape elements must be integers.

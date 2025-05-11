@@ -1,11 +1,11 @@
 --TEST--
-NDArray::floor
+NumPower::floor
 --FILE--
 <?php
-$a = \NDArray::array([[-156.50, 150.525435], [0, -39.151414]]);
-print_r(\NDArray::floor($a)->toArray());
-print_r(\NDArray::floor($a[0])->toArray());
-print_r(\NDArray::floor([[0.12],[-0.513124]])->toArray());
+$a = NumPower::array([[-156.50, 150.525435], [0, -39.151414]]);
+print_r(NumPower::floor($a)->toArray());
+print_r(NumPower::floor($a[0])->toArray());
+print_r(NumPower::floor([[0.12],[-0.513124]])->toArray());
 ?>
 --EXPECT--
 Array

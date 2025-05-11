@@ -333,8 +333,10 @@ zend_bool validate_array(zval *arr) {
     }
 
     ZEND_HASH_FOREACH_VAL(ht, first_elem) {
-        if (Z_TYPE_P(first_elem) != first_type) {
-            return 0;
+        if (Z_TYPE_P(first_elem) != first_type &&
+            !((Z_TYPE_P(first_elem) == IS_LONG || Z_TYPE_P(first_elem) == IS_DOUBLE) &&
+            (first_type == IS_LONG || first_type == IS_DOUBLE))) {
+                return 0;
         }
 
         if (first_type == IS_ARRAY) {
@@ -363,7 +365,7 @@ NDArray* Create_NDArray_FromZval(zval* php_object) {
     if (Z_TYPE_P(php_object) == IS_ARRAY) {
         int res = validate_array(php_object);
         if (!res) {
-            zend_error(E_ERROR, "FUCK!");
+            zend_error(E_ERROR, "ARRAY VALIDATION ERROR!");
         }
         new_array = Create_NDArray_FromZendArray(Z_ARRVAL_P(php_object), get_num_dims_from_zval(php_object));
     }

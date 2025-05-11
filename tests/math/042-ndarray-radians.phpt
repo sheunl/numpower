@@ -1,11 +1,11 @@
 --TEST--
-NDArray::radians
+NumPower::radians
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::radians($a)->toArray());
-print_r(\NDArray::radians($a[0])->toArray());
-print_r(\NDArray::radians([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::radians($a)->toArray());
+print_r(NumPower::radians($a[0])->toArray());
+print_r(NumPower::radians([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

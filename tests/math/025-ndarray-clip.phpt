@@ -1,11 +1,11 @@
 --TEST--
-NDArray::clip
+NumPower::clip
 --FILE--
 <?php
-$a = \NDArray::array([[-156, 150], [19, -39]]);
-print_r(\NDArray::clip($a, min: 0, max: 10)->toArray());
-print_r(\NDArray::clip($a[0], min: 0, max: 10)->toArray());
-print_r(\NDArray::clip([[0],[-0.5]], min: 0, max: 10)->toArray());
+$a = NumPower::array([[-156, 150], [19, -39]]);
+print_r(NumPower::clip($a, min: 0, max: 10)->toArray());
+print_r(NumPower::clip($a[0], min: 0, max: 10)->toArray());
+print_r(NumPower::clip([[0],[-0.5]], min: 0, max: 10)->toArray());
 ?>
 --EXPECT--
 Array

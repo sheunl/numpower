@@ -1,13 +1,13 @@
 --TEST--
-NDArray::prod
+NumPower::prod
 --FILE--
 <?php
-$a = \NDArray::array([[-156.50, 150.525435], [0, -39.151414]]);
-print_r(\NDArray::prod($a));
-print_r(\NDArray::prod($a, axis: 0)->toArray());
-print_r(\NDArray::prod($a, axis: 1)->toArray());
-print_r(\NDArray::prod($a[0]));
-print_r(\NDArray::prod([[0.12],[-0.513124]]));
+$a = NumPower::array([[-156.50, 150.525435], [0, -39.151414]]);
+print_r(NumPower::prod($a));
+print_r(NumPower::prod($a, axis: 0)->toArray());
+print_r(NumPower::prod($a, axis: 1)->toArray());
+print_r(NumPower::prod($a[0]));
+print_r(NumPower::prod([[0.12],[-0.513124]]));
 ?>
 --EXPECT--
 0Array

@@ -3313,22 +3313,28 @@ PHP_METHOD(NumPower, sqrt) {
  * @param return_value
  */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ndarray_square, 0, 0, 1)
-ZEND_ARG_INFO(0, array)
-ZEND_END_ARG_INFO()
+    ZEND_ARG_INFO(0, array)
+    ZEND_END_ARG_INFO()
 PHP_METHOD(NumPower, square) {
     NDArray *rtn = NULL;
     zval *array;
+
     ZEND_PARSE_PARAMETERS_START(1, 1)
-    Z_PARAM_ZVAL(array)
+        Z_PARAM_ZVAL(array)
     ZEND_PARSE_PARAMETERS_END();
+
     NDArray *nda = ZVAL_TO_NDARRAY(array);
+
     if (nda == NULL) {
         return;
     }
+
     rtn = NDArray_Multiply_Float(nda, nda);
+    rtn->uuid = -1;
     if (Z_TYPE_P(array) == IS_ARRAY) {
         NDArray_FREE(nda);
     }
+
     ndarray_init_new_object(rtn, return_value);
 }
 

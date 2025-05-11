@@ -1,11 +1,11 @@
 --TEST--
-NDArray::arcsin
+NumPower::arcsin
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::arcsin($a)->toArray());
-print_r(\NDArray::arcsin($a[0])->toArray());
-print_r(\NDArray::arcsin([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::arcsin($a)->toArray());
+print_r(NumPower::arcsin($a[0])->toArray());
+print_r(NumPower::arcsin([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

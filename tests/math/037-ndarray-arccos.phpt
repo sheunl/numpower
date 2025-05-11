@@ -1,11 +1,11 @@
 --TEST--
-NDArray::arccos
+NumPower::arccos
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::arccos($a)->toArray());
-print_r(\NDArray::arccos($a[0])->toArray());
-print_r(\NDArray::arccos([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::arccos($a)->toArray());
+print_r(NumPower::arccos($a[0])->toArray());
+print_r(NumPower::arccos([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

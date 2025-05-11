@@ -1,11 +1,11 @@
 --TEST--
-NDArray::min
+NumPower::min
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-print_r(\NDArray::min($a));
-print_r(\NDArray::min($a[0]));
-print_r(\NDArray::min([[1],[2]]));
+$a = NumPower::array([[1, 2], [3, 4]]);
+print_r(NumPower::min($a));
+print_r(NumPower::min($a[0]));
+print_r(NumPower::min([[1],[2]]));
 ?>
 --EXPECT--
 111

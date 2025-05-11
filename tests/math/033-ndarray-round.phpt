@@ -1,11 +1,11 @@
 --TEST--
-NDArray::round
+NumPower::round
 --FILE--
 <?php
-$a = \NDArray::array([[-156.50, 150.525435], [0, -39.151414]]);
-print_r(\NDArray::round($a, precision: 0)->toArray());
-print_r(\NDArray::round($a[0], precision: 1)->toArray());
-print_r(\NDArray::round([[0.12],[-0.513124]], precision: 2)->toArray());
+$a = NumPower::array([[-156.50, 150.525435], [0, -39.151414]]);
+print_r(NumPower::round($a, precision: 0)->toArray());
+print_r(NumPower::round($a[0], precision: 1)->toArray());
+print_r(NumPower::round([[0.12],[-0.513124]], precision: 2)->toArray());
 ?>
 --EXPECT--
 Array

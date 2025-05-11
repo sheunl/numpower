@@ -1,8 +1,8 @@
 --TEST--
-NDArray::poisson
+NumPower::poisson
 --FILE--
 <?php
-use NDArray as nd;
+use NumPower as nd;
 
 new class
 {
@@ -187,16 +187,16 @@ successful creation with 3-dim and integer
 successful creation with 3-dim and float
 
 --- CASE 2 ---
-Error when passed shape is integer: NDArray::poisson(): Argument #1 ($shape) must be of type array, int given
-Error when passed shape is double: NDArray::poisson(): Argument #1 ($shape) must be of type array, float given
-Error when passed shape is string: NDArray::poisson(): Argument #1 ($shape) must be of type array, string given
-Error when passed shape is null: NDArray::poisson(): Argument #1 ($shape) must be of type array, null given
-Error when passed shape is object: NDArray::poisson(): Argument #1 ($shape) must be of type array, stdClass given
+Error when passed shape is integer: NumPower::poisson(): Argument #1 ($shape) must be of type array, int given
+Error when passed shape is double: NumPower::poisson(): Argument #1 ($shape) must be of type array, float given
+Error when passed shape is string: NumPower::poisson(): Argument #1 ($shape) must be of type array, string given
+Error when passed shape is null: NumPower::poisson(): Argument #1 ($shape) must be of type array, null given
+Error when passed shape is object: NumPower::poisson(): Argument #1 ($shape) must be of type array, stdClass given
 
 --- CASE 3 ---
-Error when passed lamb is arrayy: NDArray::poisson(): Argument #2 ($lam) must be of type float, array given
-Error when passed lamb is string: NDArray::poisson(): Argument #2 ($lam) must be of type float, string given
-Error when passed lamb is object: NDArray::poisson(): Argument #2 ($lam) must be of type float, stdClass given
+Error when passed lamb is arrayy: NumPower::poisson(): Argument #2 ($lam) must be of type float, array given
+Error when passed lamb is string: NumPower::poisson(): Argument #2 ($lam) must be of type float, string given
+Error when passed lamb is object: NumPower::poisson(): Argument #2 ($lam) must be of type float, stdClass given
 
 --- CASE 4 ---
 Error when shape value is array: Invalid parameter: Shape elements must be integers.
