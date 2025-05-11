@@ -1,11 +1,11 @@
 --TEST--
-NDArray::tanh
+NumPower::tanh
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::tanh($a)->toArray());
-print_r(\NDArray::tanh($a[0])->toArray());
-print_r(\NDArray::tanh([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::tanh($a)->toArray());
+print_r(NumPower::tanh($a[0])->toArray());
+print_r(NumPower::tanh([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

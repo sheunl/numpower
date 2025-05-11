@@ -142,7 +142,7 @@ void add_to_buffer(NDArray* ndarray) {
         return;
     }
 
-    if (MAIN_MEM_STACK.numElements >= MAIN_MEM_STACK.bufferSize) {
+    if (MAIN_MEM_STACK.numElements >= MAIN_MEM_STACK.bufferSize && ndarray->uuid == -1) {
         int newSize = MAIN_MEM_STACK.bufferSize * 2;
         NDArray** newBuffer = (NDArray**)erealloc(MAIN_MEM_STACK.buffer, 
                                 newSize * sizeof(NDArray*));
@@ -158,10 +158,12 @@ void add_to_buffer(NDArray* ndarray) {
         MAIN_MEM_STACK.bufferSize = newSize;
     }
 
-    ndarray->uuid = MAIN_MEM_STACK.numElements;
-    MAIN_MEM_STACK.buffer[MAIN_MEM_STACK.numElements] = ndarray;
-    MAIN_MEM_STACK.numElements++;
-    MAIN_MEM_STACK.totalAllocated++;
+    if (ndarray->uuid == -1) {
+        ndarray->uuid = MAIN_MEM_STACK.numElements;
+        MAIN_MEM_STACK.buffer[MAIN_MEM_STACK.numElements] = ndarray;
+        MAIN_MEM_STACK.numElements++;
+        MAIN_MEM_STACK.totalAllocated++;
+    }
 
 #ifdef ZTS
     tsrm_mutex_unlock(MAIN_MEM_STACK.lock);

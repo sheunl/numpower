@@ -2,7 +2,7 @@
 NDArray::flatten
 --FILE--
 <?php
-use \NDArray as nd;
+use NumPower as nd;
 
 $a = nd::array([[1, 2, 3, 4]]);
 $b = nd::array([[5, 6], [7, 8]]);

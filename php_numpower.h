@@ -4,6 +4,7 @@
 # define PHP_NDARRAY_H
 
 #include "config.h"
+#include "php.h"
 
 #ifdef HAVE_CUBLAS
 #include <cuda_runtime.h>
@@ -60,10 +61,9 @@ ZEND_END_ARG_INFO()
 
 ZEND_FUNCTION(print_r_);
 
-
-PHPAPI zend_class_entry *phpsci_ce_NDArray;
-PHPAPI zend_class_entry *phpsci_ce_NumPower;
-PHPAPI zend_class_entry *phpsci_ce_ArithmeticOperand;
+PHPAPI extern zend_class_entry *phpsci_ce_NDArray;
+PHPAPI extern zend_class_entry *phpsci_ce_NumPower;
+PHPAPI extern zend_class_entry *phpsci_ce_ArithmeticOperand;
 
 # define PHP_NDARRAY_VERSION "0.7.0"
 

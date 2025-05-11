@@ -1,11 +1,11 @@
 --TEST--
-NDArray::arctanh
+NumPower::arctanh
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::arctanh($a)->toArray());
-print_r(\NDArray::arctanh($a[0])->toArray());
-print_r(\NDArray::arctanh([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::arctanh($a)->toArray());
+print_r(NumPower::arctanh($a[0])->toArray());
+print_r(NumPower::arctanh([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

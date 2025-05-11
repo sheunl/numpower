@@ -284,6 +284,68 @@ NDArray_ToGD(NDArray *a, NDArray *n_alpha, zval *output) {
 
 #endif
 
+/**
+ * Create a new NDArray Descriptor
+ *
+ * @param numElements
+ * @param elSize
+ * @param type
+ * @return
+ */
+NDArrayDescriptor* _Create_Descriptor(long numElements, int elsize, const char* type) {
+    NDArrayDescriptor* ndArrayDescriptor = emalloc(sizeof(NDArrayDescriptor));
+    ndArrayDescriptor->elsize = elsize;
+    ndArrayDescriptor->numElements = numElements;
+    ndArrayDescriptor->type = type;
+    return ndArrayDescriptor;
+}
+
+NDArray* NDArray_create(int* shape, int ndim, const char* type, const int device) {
+    NDArray* rtn;
+    int type_size = get_type_size(type);
+
+    if (shape == NULL) {
+        return NULL;
+    }
+
+    long total_num_elements = shape[0];
+
+    if (ndim == 0) {
+        total_num_elements = 1;
+    }
+
+    // Calculate number of elements
+    for (int i = 1; i < ndim; i++) {
+        total_num_elements = total_num_elements * shape[i];
+    }
+
+    rtn = emalloc(sizeof(NDArray));
+    rtn->descriptor = _Create_Descriptor(total_num_elements, type_size, type);
+    rtn->flags = 0;
+    rtn->ndim = ndim;
+    rtn->dimensions = shape;
+    rtn->refcount = 1;
+    rtn->base = NULL;
+    rtn->device = device;
+    rtn->strides = Generate_Strides(shape, ndim, type_size);
+    NDArrayIterator_INIT(rtn);
+    return rtn;
+}
+
+void NDArray_enableFlags(NDArray * arr, int flags) {
+    arr->flags |= flags;
+}
+
+bool NDArray_checkFlags(const NDArray *arr, int flags)
+{
+    return (arr->flags & flags) == flags;
+}
+
+void NDArray_CLEARFLAGS(NDArray *arr, int flags) {
+    arr->flags &= ~flags;
+}
+
+
 char*
 convert_shape_to_string(int n, int const *vals, char *endin)
 {
@@ -650,29 +712,25 @@ NDArray_FREEDATA(NDArray *target) {
     target->data = NULL;
 }
 
-/**
- * Print NDArray or return the print string
- *
- * @param array
- * @param do_return
- * @return
- */
-char *
-NDArray_Print(NDArray *array, int do_return) {
+char* NDArray_Print(NDArray *array, int do_return) {
     assert(array != NULL);
     char *str;
+
     if (is_type(NDArray_TYPE(array), NDARRAY_TYPE_DOUBLE64)) {
         str = print_matrix(NDArray_DDATA(array), NDArray_NDIM(array), NDArray_SHAPE(array),
                            NDArray_STRIDES(array), NDArray_NUMELEMENTS(array), NDArray_DEVICE(array));
     }
+
     if (is_type(NDArray_TYPE(array), NDARRAY_TYPE_FLOAT32)) {
         str = print_matrix_float(NDArray_FDATA(array), NDArray_NDIM(array), NDArray_SHAPE(array),
                                  NDArray_STRIDES(array), NDArray_NUMELEMENTS(array), NDArray_DEVICE(array));
     }
+
     if (do_return == 0) {
         printf("%s", str);
         return NULL;
     }
+
     return str;
 }
 
@@ -688,6 +746,18 @@ NDArray_Map(NDArray *array, ElementWiseDoubleOperation op) {
     rtn = NDArray_Zeros(new_shape, NDArray_NDIM(array), NDARRAY_TYPE_FLOAT32, NDArray_DEVICE(array));
     for (i = 0; i < NDArray_NUMELEMENTS(array); i++) {
         NDArray_FDATA(rtn)[i] = op(NDArray_FDATA(array)[i]);
+    }
+    return rtn;
+}
+
+NDArray * NDArray_Map_Double(NDArray *array, ElementWiseRealDoubleOperation op) {
+    NDArray *rtn;
+    int i;
+    int *new_shape = emalloc(sizeof(int) * NDArray_NDIM(array));
+    memcpy(new_shape, NDArray_SHAPE(array), sizeof(int) * NDArray_NDIM(array));
+    rtn = NDArray_Zeros(new_shape, NDArray_NDIM(array), NDARRAY_TYPE_DOUBLE64, NDArray_DEVICE(array));
+    for (i = 0; i < NDArray_NUMELEMENTS(array); i++) {
+        NDArray_DDATA(rtn)[i] = op(NDArray_DDATA(array)[i]);
     }
     return rtn;
 }
@@ -1048,11 +1118,11 @@ NDArray_ToGPU(NDArray *target) {
     new_shape = emalloc(sizeof(int) * NDArray_NDIM(target));
     memcpy(new_shape, NDArray_SHAPE(target), sizeof(int) * NDArray_NDIM(target));
 
-    NDArray *rtn = NDArray_Zeros(new_shape, n_ndim, NDARRAY_TYPE_FLOAT32, NDArray_DEVICE(target));
+    NDArray *rtn = NDArray_Zeros(new_shape, n_ndim, NDArray_TYPE(target), NDArray_DEVICE(target));
     rtn->device = NDARRAY_DEVICE_GPU;
 
-    vmalloc((void **) &tmp_gpu, NDArray_NUMELEMENTS(target) * sizeof(float));
-    cudaMemcpy(tmp_gpu, NDArray_FDATA(target), NDArray_NUMELEMENTS(target) * sizeof(float), cudaMemcpyHostToDevice);
+    vmalloc((void **) &tmp_gpu, NDArray_NUMELEMENTS(target) * NDArray_ELSIZE(target));
+    cudaMemcpy(tmp_gpu, NDArray_FDATA(target), NDArray_NUMELEMENTS(target) * NDArray_ELSIZE(target), cudaMemcpyHostToDevice);
     cudaError_t err = cudaDeviceSynchronize();
     if (err != cudaSuccess) {
         zend_throw_error(NULL, "Error synchronizing: %s\n", cudaGetErrorString(err));
@@ -1171,6 +1241,11 @@ NDArray_IsBroadcastable(const NDArray *array1, const NDArray *array2) {
  */
 NDArray *
 NDArray_Broadcast(NDArray *a, NDArray *b) {
+    if (NDArray_TYPE(a) != NDArray_TYPE(b)) {
+        zend_throw_error(NULL, "NDArray_Broadcast: Type mismatch.");
+        return NULL;
+
+    }
     int i;
     NDArray *src, *dst, *rtn;
     src = a;
@@ -1191,31 +1266,46 @@ NDArray_Broadcast(NDArray *a, NDArray *b) {
         zend_throw_error(NULL, "Broadcast shape mismatch.");
         return NULL;
     }
+    
     rtn = NDArray_EmptyLike(dst);
     char *rtn_p = NDArray_DATA(rtn);
     if (NDArray_NDIM(a) == 0 && NDArray_NDIM(b) > 0) {
         for (i = 0; i < NDArray_NUMELEMENTS(b); i++) {
-            NDArray_FDATA(rtn)[i] = NDArray_FDATA(a)[0];
+            if (NDArray_TYPE(rtn) == NDARRAY_TYPE_FLOAT32) {
+                NDArray_FDATA(rtn)[i] = NDArray_FDATA(a)[0];
+            } else {
+                NDArray_DDATA(rtn)[i] = NDArray_DDATA(a)[0];
+            }
+            
         }
     }
 
     if (NDArray_NDIM(src) == 1 && NDArray_NDIM(dst) > 1) {
-
         if (NDArray_SHAPE(src)[0] == NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]
             || NDArray_SHAPE(src)[0] == NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]) {
             if (NDArray_DEVICE(dst) == NDARRAY_DEVICE_CPU) {
                 for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
-                    memcpy(rtn_p,
-                           NDArray_FDATA(src), sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
-                    rtn_p = rtn_p + (sizeof(float) * NDArray_SHAPE(src)[0]);
+                    if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                        memcpy(rtn_p, NDArray_FDATA(src), sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = rtn_p + (sizeof(float) * NDArray_SHAPE(src)[0]);
+                    } else {
+                        memcpy(rtn_p, NDArray_DDATA(src), sizeof(double) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = rtn_p + (sizeof(double) * NDArray_SHAPE(src)[0]);
+
+                    }
                 }
             }
 #ifdef HAVE_CUBLAS
             if (NDArray_DEVICE(dst) == NDARRAY_DEVICE_GPU) {
                 for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
-                    vmemcpyd2d(NDArray_DATA(src), rtn_p,
-                                        sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
-                    rtn_p = rtn_p + (sizeof(float) * NDArray_SHAPE(src)[0]);
+                    if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                        vmemcpyd2d(NDArray_DATA(src), rtn_p, sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = rtn_p + (sizeof(float) * NDArray_SHAPE(src)[0]);
+                    } else {
+                        vmemcpyd2d(NDArray_DATA(src), rtn_p, sizeof(double) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = rtn_p + (sizeof(double) * NDArray_SHAPE(src)[0]);
+
+                    }
                 }
             }
 #endif
@@ -1228,15 +1318,25 @@ NDArray_Broadcast(NDArray *a, NDArray *b) {
                 if (NDArray_NUMELEMENTS(src) != 1) {
                     for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
                         for (j = 0; j < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]; j++) {
-                            NDArray_FDATA(rtn)[(i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                            if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                                NDArray_FDATA(rtn)[(i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
                                                j] = NDArray_FDATA(src)[i];
+                            } else {
+                                NDArray_DDATA(rtn)[(i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                                               j] = NDArray_DDATA(src)[i];
+                            }
                         }
                     }
                 } else {
                     for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
                         for (j = 0; j < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]; j++) {
-                            NDArray_FDATA(rtn)[(i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
-                                               j] = NDArray_FDATA(src)[0];
+                            if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                                NDArray_FDATA(rtn)[(i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                                                   j] = NDArray_FDATA(src)[0];
+                            } else {
+                                NDArray_DDATA(rtn)[(i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                                                   j] = NDArray_DDATA(src)[0];
+                            }
                         }
                     }
                     return rtn;
@@ -1248,21 +1348,37 @@ NDArray_Broadcast(NDArray *a, NDArray *b) {
                 if (NDArray_NUMELEMENTS(src) != 1) {
                     for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
                         for (j = 0; j < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]; j++) {
-                            tmp_p = (char *) (NDArray_FDATA(src) + i);
-                            rtn_p = (char *) (NDArray_FDATA(rtn) +
-                                              (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
-                                              j);
-                            vmemcpyd2d(tmp_p, rtn_p, sizeof(float));
+                            if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                                tmp_p = (char *) (NDArray_FDATA(src) + i);
+                                rtn_p = (char *) (NDArray_FDATA(rtn) +
+                                                  (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                                                  j);
+                                vmemcpyd2d(tmp_p, rtn_p, sizeof(float));
+                            } else {
+                                tmp_p = (char *) (NDArray_DDATA(src) + i);
+                                rtn_p = (char *) (NDArray_DDATA(rtn) +
+                                                  (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                                                  j);
+                                vmemcpyd2d(tmp_p, rtn_p, sizeof(double));
+                            }
                         }
                     }
                 } else {
                     for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
                         for (j = 0; j < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]; j++) {
-                            tmp_p = (char *) (NDArray_FDATA(src));
-                            rtn_p = (char *) (NDArray_FDATA(rtn) +
-                                              (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
-                                              j);
-                            vmemcpyd2d(tmp_p, rtn_p, sizeof(float));
+                            if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                                tmp_p = (char *) (NDArray_FDATA(src));
+                                rtn_p = (char *) (NDArray_FDATA(rtn) +
+                                                  (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                                                  j);
+                                vmemcpyd2d(tmp_p, rtn_p, sizeof(float));
+                            } else {
+                                tmp_p = (char *) (NDArray_DDATA(src));
+                                rtn_p = (char *) (NDArray_DDATA(rtn) +
+                                                  (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) +
+                                                  j);
+                                vmemcpyd2d(tmp_p, rtn_p, sizeof(double));
+                            }
                         }
                     }
                     return rtn;
@@ -1273,18 +1389,25 @@ NDArray_Broadcast(NDArray *a, NDArray *b) {
         if (NDArray_SHAPE(src)[NDArray_NDIM(dst) - 1] == NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]) {
             if (NDArray_DEVICE(dst) == NDARRAY_DEVICE_CPU) {
                 for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
-                    memcpy(rtn_p,
-                           NDArray_FDATA(src), sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
-                    rtn_p = rtn_p + (sizeof(float) * NDArray_SHAPE(src)[NDArray_NDIM(dst) - 1]);
+                    if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                        memcpy(rtn_p, NDArray_FDATA(src), sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = rtn_p + (sizeof(float) * NDArray_SHAPE(src)[NDArray_NDIM(dst) - 1]);
+                    } else {
+                        memcpy(rtn_p, NDArray_DDATA(src), sizeof(double) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = rtn_p + (sizeof(double) * NDArray_SHAPE(src)[NDArray_NDIM(dst) - 1]);
+                    }
                 }
             }
 #ifdef HAVE_CUBLAS
             if (NDArray_DEVICE(dst) == NDARRAY_DEVICE_GPU) {
                 for (i = 0; i < NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 2]; i++) {
-                    vmemcpyd2d(NDArray_DATA(src), rtn_p,
-                                        sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
-                    rtn_p = (char *) (NDArray_FDATA(rtn) +
-                                      (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) + j);
+                    if (NDArray_TYPE(src) == NDARRAY_TYPE_FLOAT32) {
+                        vmemcpyd2d(NDArray_DATA(src), rtn_p, sizeof(float) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = (char *) (NDArray_FDATA(rtn) + (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) + j);
+                    } else {
+                        vmemcpyd2d(NDArray_DATA(src), rtn_p, sizeof(double) * NDArray_SHAPE(dst)[NDArray_NDIM(dst) - 1]);
+                        rtn_p = (char *) (NDArray_DDATA(rtn) + (i * NDArray_STRIDES(rtn)[NDArray_NDIM(rtn) - 2] / NDArray_ELSIZE(rtn)) + j);
+                    }
                 }
             }
 #endif
@@ -1309,6 +1432,15 @@ NDArray_GetFloatScalar(NDArray *a) {
 #endif
 }
 
+double NDArray_GetDoubleScalar(NDArray *a) {
+    if (NDArray_DEVICE(a) == NDARRAY_DEVICE_CPU) {
+        return NDArray_DDATA(a)[0];
+    }
+#ifdef HAVE_CUBLAS
+    return NDArray_VDOUBLE(NDArray_DATA(a));
+#endif
+}
+
 /**
  * Overwrite the values of one NDArray with the values
  * of another.
@@ -1320,7 +1452,7 @@ int
 NDArray_Overwrite(NDArray *target, NDArray *values) {
 
     if (NDArray_NDIM(values) == 0) {
-        NDArray_Fill(target, NDArray_GetFloatScalar(values));
+        NDArray_FillFloat(target, NDArray_GetFloatScalar(values));
         return 1;
     }
 
@@ -1636,8 +1768,8 @@ NDArray_CreateMultiSortedStridePerm(int narrays, NDArray **arrays,
  */
 static int _nd_stride_sort_item_comparator(const void *a, const void *b)
 {
-    int astride = ((const ndarray_stride_sort_item *)a)->stride,
-        bstride = ((const ndarray_stride_sort_item *)b)->stride;
+    int astride = ((const NDArrayStrideSortItem *)a)->stride,
+        bstride = ((const NDArrayStrideSortItem *)b)->stride;
 
     /* Sort the absolute value of the strides */
     if (astride < 0) {
@@ -1652,8 +1784,8 @@ static int _nd_stride_sort_item_comparator(const void *a, const void *b)
          * Make the qsort stable by next comparing the perm order.
          * (Note that two perm entries will never be equal)
          */
-        int aperm = ((const ndarray_stride_sort_item *)a)->perm,
-                bperm = ((const ndarray_stride_sort_item *)b)->perm;
+        int aperm = ((const NDArrayStrideSortItem *)a)->perm,
+                bperm = ((const NDArrayStrideSortItem *)b)->perm;
         return (aperm < bperm) ? -1 : 1;
     }
     if (astride > bstride) {
@@ -1664,7 +1796,7 @@ static int _nd_stride_sort_item_comparator(const void *a, const void *b)
 
 void
 NDArray_CreateSortedStridePerm(int ndim, int const *strides,
-                               ndarray_stride_sort_item *out_strideperm)
+    NDArrayStrideSortItem *out_strideperm)
 {
     int i;
 

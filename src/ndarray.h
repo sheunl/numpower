@@ -13,7 +13,7 @@ extern "C" {
 #define NDARRAY_ARRAY_C_CONTIGUOUS    0x0001
 #define NDARRAY_ARRAY_F_CONTIGUOUS    0x0002
 
-#define NDARRAY_UNLIKELY(x) (x)
+#define NDArray_UUID(a) ((int)((a)->uuid))
 #define NDArray_DATA(a) ((void *)((a)->data))
 #define NDArray_DESCRIPTOR(a) ((NDArrayDescriptor *)((a)->descriptor))
 #define NDArray_DDATA(a) ((double *)((a)->data))
@@ -23,7 +23,6 @@ extern "C" {
 #define NDArray_SHAPE(a) ((int *)((a)->dimensions))
 #define NDArray_STRIDES(a) ((int *)((a)->strides))
 #define NDArray_TYPE(a) ((const char *)((a)->descriptor->type))
-#define NDArray_UUID(a) ((int)((a)->uuid))
 #define NDArray_NUMELEMENTS(a) ((long)((a)->descriptor->numElements))
 #define NDArray_ELSIZE(a) ((int)((a)->descriptor->elsize))
 #define NDArray_DEVICE(a) ((int)((a)->device))
@@ -36,72 +35,121 @@ extern "C" {
 
 /**
  * NDArray Dims
+ * 
+ * @property ptr Pointer to the dimensions array
+ * @property len Length of the dimensions array
  **/
 typedef struct NDArray_Dims {
-    int * ptr;
-    int len;
+    int* ptr;
+    int  len;
 } NDArray_Dims;
 
+/**
+ * NDArray Iterator
+ * 
+ * @property currentIndex Current index of the iterator
+ */
 typedef struct NDArrayIterator {
-    int current_index;
+    int currentIndex;
 } NDArrayIterator;
 
 /**
  * NDArray Descriptor
+ * 
+ * @property type        NDArray datatype
+ * @property elsize      NDArray datatype size
+ * @property numElements Number of elements in the NDArray
  */
 typedef struct NDArrayDescriptor {
-    const char* type;          // d = double
-    int elsize;         // Datatype size
-    long numElements;    // Number of elements
+    const char* type;
+    int         elsize;
+    long        numElements; 
 } NDArrayDescriptor;
 
 /**
- * NDArray
+ * NDArray Stride Sort Item
+ * 
+ * @property perm   Permutation index
+ * @property stride Stride value
  */
-typedef struct NDArray {
-    int uuid;            // Buffer UUID
-    int* strides;       // Strides vector (number of bytes)
-    int* dimensions;    // Dimensions size vector (Shape)
-    int ndim;            // Number of Dimensions
-    char* data;         // Data Buffer (contiguous strided)
-    struct NDArray* base;      // Used when sharing memory from other NDArray (slices, etc)
-    int flags;           // Describes NDArray memory approach (Memory related flags)
-    NDArrayDescriptor* descriptor;    // NDArray data descriptor
-    NDArrayIterator* iterator;
-    NDArrayIterator* php_iterator;
-    int refcount;
-    int device; // NDArray Device   0 = CPU     1 = GPU
-} NDArray;
-
-/*
- * Enables the specified array flags.
- */
-static void
-NDArray_ENABLEFLAGS(NDArray * arr, int flags) {
-    (arr)->flags |= flags;
-}
-
-static inline int
-NDArray_CHKFLAGS(const NDArray *arr, int flags)
-{
-    return ((arr)->flags & flags) == flags;
-}
-
-/*
- * Clears the specified array flags. Does no checking,
- * assumes you know what you're doing.
- */
-static void
-NDArray_CLEARFLAGS(NDArray *arr, int flags) {
-    (arr)->flags &= ~flags;
-}
-
 typedef struct {
     int perm, stride;
-} ndarray_stride_sort_item;
+} NDArrayStrideSortItem;
 
+/**
+ * NDArray
+ * 
+ * @property uuid         Unique identifier for the NDArray
+ * @property strides      Strides vector (number of bytes)
+ * @property dimensions   Dimensions size vector (Shape)
+ * @property ndim         Number of Dimensions
+ * @property data         Data Buffer (contiguous strided)
+ * @property base         Used when sharing memory from other NDArray (slices, etc)
+ * @property flags        Describes NDArray memory approach (Memory related flags)
+ * @property descriptor   NDArray data descriptor
+ * @property iterator     Iterator for the NDArray
+ * @property php_iterator PHP iterator for the NDArray
+ * @property refcount     Reference count for the NDArray
+ * @property device       NDArray Device (0 = CPU, 1 = GPU)
+ */
+typedef struct NDArray {
+    int                uuid;
+    int*               strides;
+    int*               dimensions;
+    int                ndim;
+    char*              data;
+    struct NDArray*    base;
+    int                flags;
+    NDArrayDescriptor* descriptor;
+    NDArrayIterator*   iterator;
+    NDArrayIterator*   php_iterator;
+    int                refcount;
+    int                device;
+} NDArray;
+
+NDArray* NDArray_create(int *shape, int ndim, const char *type, int device);
+
+/**
+ * Enable flags for NDArray
+ * 
+ * @param[inout] arr Pointer to the NDArray
+ * @param        flags Flags to enable
+ */
+void NDArray_enableFlags(NDArray * arr, int flags);
+
+/**
+ * Check if the NDArray has the specified flags
+ * 
+ * @param[in] arr   Pointer to the NDArray
+ * @param     flags Flags to check
+ * 
+ * @return trye if the flags are set, false otherwise
+ */
+bool NDArray_checkFlags(const NDArray *arr, int flags);
+
+/**
+ * Clears the specified array flags. Does no checking,
+ * assumes you know what you're doing.
+ * 
+ * @param[inout] arr Pointer to the NDArray
+ * @param        flags Flags to clear
+ */
+void NDArray_CLEARFLAGS(NDArray *arr, int flags);
+
+/**
+ * Remove NDArary from the memory
+ * 
+ * @param[inout] array Pointer to the NDArray
+ */
 void NDArray_FREE(NDArray *array);
-char *NDArray_Print(NDArray *array, int do_return);
+
+/**
+ * Print NDArray information data
+ * 
+ * @param[in] array     Pointer to the NDArray
+ * @param     do_return Flag to return the string or print it
+ */
+char* NDArray_Print(NDArray *array, int do_return);
 NDArray *reduce(NDArray *array, int *axis, NDArray *(*operation)(NDArray *, NDArray *));
 NDArray *single_reduce(NDArray *array, int *axis, float (*operation)(NDArray *));
 float NDArray_Min(NDArray *target);
@@ -117,6 +165,7 @@ int NDArray_ShapeCompare(NDArray *a, NDArray *b);
 NDArray* NDArray_Broadcast(NDArray *a, NDArray *b);
 int NDArray_IsBroadcastable(const NDArray *arr1, const NDArray *arr2);
 float NDArray_GetFloatScalar(NDArray *a);
+double NDArray_GetDoubleScalar(NDArray *a);
 void NDArray_FREEDATA(NDArray *target);
 int NDArray_Overwrite(NDArray *target, NDArray *values);
 NDArray* NDArray_FromGD(zval *a, bool channel_last);
@@ -127,7 +176,7 @@ NDArray* NDArray_AssignRawScalar(NDArray *dst, NDArray *src);
 int NDArray_AssignArray(NDArray *dst, NDArray *src);
 int NDArray_CompareLists(int const *l1, int const *l2, int n);
 void NDArray_CreateMultiSortedStridePerm(int narrays, NDArray **arrays, int ndim, int *out_strideperm);
-void NDArray_CreateSortedStridePerm(int ndim, int const *strides, ndarray_stride_sort_item *out_strideperm);
+void NDArray_CreateSortedStridePerm(int ndim, int const *strides, NDArrayStrideSortItem *out_strideperm);
 
 #ifdef __cplusplus
 }
@@ -136,10 +185,15 @@ void NDArray_CreateSortedStridePerm(int ndim, int const *strides, ndarray_stride
 typedef float (*ElementWiseDoubleOperation)(float);
 typedef float (*ElementWiseFloatOperation2F)(float, float, float);
 typedef float (*ElementWiseFloatOperation1F)(float, float);
+
+typedef double (*ElementWiseRealDoubleOperation)(double);
+
 NDArray* NDArray_Map(NDArray *array, ElementWiseDoubleOperation op);
 NDArray* NDArray_Map_Zval(NDArray *array, zval *callback);
 NDArray* NDArray_Map2F(NDArray *array, ElementWiseFloatOperation2F op, float val1, float val2);
 NDArray* NDArray_Map1F(NDArray *array, ElementWiseFloatOperation1F op, float val1);
 NDArray* NDArray_Map1ND(NDArray *array, ElementWiseFloatOperation1F op, NDArray *val1);
+
+NDArray* NDArray_Map_Double(NDArray *array, ElementWiseRealDoubleOperation op);
 
 #endif //PHPSCI_NDARRAY_NDARRAY_H

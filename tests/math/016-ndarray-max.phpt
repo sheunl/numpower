@@ -1,11 +1,11 @@
 --TEST--
-NDArray::max
+NumPower::max
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-print_r(\NDArray::max($a));
-print_r(\NDArray::max($a[0]));
-print_r(\NDArray::max([[1],[2]]));
+$a = NumPower::array([[1, 2], [3, 4]]);
+print_r(NumPower::max($a));
+print_r(NumPower::max($a[0]));
+print_r(NumPower::max([[1],[2]]));
 ?>
 --EXPECT--
 422

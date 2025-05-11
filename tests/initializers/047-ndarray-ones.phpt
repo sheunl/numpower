@@ -1,10 +1,10 @@
 --TEST--
-NDArray::ones
+NumPower::ones
 --FILE--
 <?php
-$a = \NDArray::ones([4]);
+$a = NumPower::ones([4]);
 print_r($a->toArray());
-$a = \NDArray::ones([4, 4]);
+$a = NumPower::ones([4, 4]);
 print_r($a->toArray());
 ?>
 --EXPECT--

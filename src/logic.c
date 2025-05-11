@@ -78,13 +78,13 @@ NDArray_Greater(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_Fill(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_Fill(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
     }
 
     int i;
@@ -182,13 +182,13 @@ NDArray_Less(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_Fill(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_Fill(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
     }
 
     int i;
@@ -282,13 +282,13 @@ NDArray_LessEqual(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_Fill(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_Fill(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
     }
 
     int i;
@@ -388,13 +388,13 @@ NDArray_GreaterEqual(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_Fill(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_Fill(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
     }
 
     int i;
@@ -489,13 +489,13 @@ NDArray_Equal(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_Fill(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_Fill(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
     }
 
     int i;
@@ -590,13 +590,13 @@ NDArray_NotEqual(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_Fill(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_Fill(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
     }
 
     int i;

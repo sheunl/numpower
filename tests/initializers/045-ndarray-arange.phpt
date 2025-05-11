@@ -1,14 +1,14 @@
 --TEST--
-NDArray::arange
+NumPower::arange
 --FILE--
 <?php
-$a = \NDArray::arange(20, 10, 1);
+$a = NumPower::arange(20, 10, 1);
 print_r($a->toArray());
 
-$b = \NDArray::arange(10);
+$b = NumPower::arange(10);
 print_r($b->toArray());
 
-$c = \NDArray::arange(10, 1);
+$c = NumPower::arange(10, 1);
 print_r($c->toArray());
 ?>
 --EXPECT--

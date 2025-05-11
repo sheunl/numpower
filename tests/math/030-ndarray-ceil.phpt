@@ -1,11 +1,11 @@
 --TEST--
-NDArray::ceil
+NumPower::ceil
 --FILE--
 <?php
-$a = \NDArray::array([[-156.50, 150.525435], [0, -39.151414]]);
-print_r(\NDArray::ceil($a)->toArray());
-print_r(\NDArray::ceil($a[0])->toArray());
-print_r(\NDArray::ceil([[0.12],[-0.513124]])->toArray());
+$a = NumPower::array([[-156.50, 150.525435], [0, -39.151414]]);
+print_r(NumPower::ceil($a)->toArray());
+print_r(NumPower::ceil($a[0])->toArray());
+print_r(NumPower::ceil([[0.12],[-0.513124]])->toArray());
 ?>
 --EXPECT--
 Array

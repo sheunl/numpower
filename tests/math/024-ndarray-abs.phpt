@@ -1,11 +1,11 @@
 --TEST--
-NDArray::abs
+NumPower::abs
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::abs($a)->toArray());
-print_r(\NDArray::abs($a[0])->toArray());
-print_r(\NDArray::abs([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::abs($a)->toArray());
+print_r(NumPower::abs($a[0])->toArray());
+print_r(NumPower::abs([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

@@ -1,8 +1,8 @@
 --TEST--
-NDArray::identity
+NumPower::identity
 --FILE--
 <?php
-$a = \NDArray::identity(4);
+$a = NumPower::identity(4);
 print_r($a->toArray());
 ?>
 --EXPECT--

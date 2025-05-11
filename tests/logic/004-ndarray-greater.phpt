@@ -1,13 +1,13 @@
 --TEST--
-NDArray::greater
+NumPower::greater
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-$b = \NDArray::array([[5, 6], [7, 8]]);
-$c = \NDArray::array([9, 10]);
-print_r(\NDArray::greater($a, $b)->toArray());
-print_r(\NDArray::greater($a, $a)->toArray());
-print_r(\NDArray::greater($c, $c)->toArray());
+$a = NumPower::array([[1, 2], [3, 4]]);
+$b = NumPower::array([[5, 6], [7, 8]]);
+$c = NumPower::array([9, 10]);
+print_r(NumPower::greater($a, $b)->toArray());
+print_r(NumPower::greater($a, $a)->toArray());
+print_r(NumPower::greater($c, $c)->toArray());
 ?>
 --EXPECT--
 Array

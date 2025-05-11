@@ -1,14 +1,14 @@
 --TEST--
-NDArray::trace
+NumPower::trace
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-$b = \NDArray::array([[5, 6], [7, 8]]);
-$c = \NDArray::array([9, 10]);
-$d = \NDArray::array([[9], [10]]);
-print_r(\NDArray::trace($a));
-print_r(\NDArray::trace([[1, 2], [3, 4]]));
-print_r(\NDArray::trace($d));
+$a = NumPower::array([[1, 2], [3, 4]]);
+$b = NumPower::array([[5, 6], [7, 8]]);
+$c = NumPower::array([9, 10]);
+$d = NumPower::array([[9], [10]]);
+print_r(NumPower::trace($a));
+print_r(NumPower::trace([[1, 2], [3, 4]]));
+print_r(NumPower::trace($d));
 ?>
 --EXPECT--
 559

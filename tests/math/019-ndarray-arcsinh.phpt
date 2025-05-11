@@ -1,11 +1,11 @@
 --TEST--
-NDArray::arcsinh
+NumPower::arcsinh
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-print_r(\NDArray::arcsinh($a)->toArray());
-print_r(\NDArray::arcsinh($a[0])->toArray());
-print_r(\NDArray::arcsinh([[1],[2]])->toArray());
+$a = NumPower::array([[1, 2], [3, 4]]);
+print_r(NumPower::arcsinh($a)->toArray());
+print_r(NumPower::arcsinh($a[0])->toArray());
+print_r(NumPower::arcsinh([[1],[2]])->toArray());
 ?>
 --EXPECT--
 Array

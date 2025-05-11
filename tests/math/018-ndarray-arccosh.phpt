@@ -1,11 +1,11 @@
 --TEST--
-NDArray::arccosh
+NumPower::arccosh
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-print_r(\NDArray::arccosh($a)->toArray());
-print_r(\NDArray::arccosh($a[0])->toArray());
-print_r(\NDArray::arccosh([[1],[2]])->toArray());
+$a = NumPower::array([[1, 2], [3, 4]]);
+print_r(NumPower::arccosh($a)->toArray());
+print_r(NumPower::arccosh($a[0])->toArray());
+print_r(NumPower::arccosh([[1],[2]])->toArray());
 ?>
 --EXPECT--
 Array

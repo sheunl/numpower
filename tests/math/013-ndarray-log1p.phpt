@@ -1,11 +1,11 @@
 --TEST--
-NDArray::log1p
+NumPower::log1p
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-print_r(\NDArray::log1p($a)->toArray());
-print_r(\NDArray::log1p($a[0])->toArray());
-print_r(\NDArray::log1p([[1],[2]])->toArray());
+$a = NumPower::array([[1, 2], [3, 4]]);
+print_r(NumPower::log1p($a)->toArray());
+print_r(NumPower::log1p($a[0])->toArray());
+print_r(NumPower::log1p([[1],[2]])->toArray());
 ?>
 --EXPECT--
 Array

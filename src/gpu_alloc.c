@@ -46,6 +46,12 @@ NDArray_VFLOAT(char *target) {
     return value;
 }
 
+double NDArray_VDOUBLE(char *target) {
+    double value;
+    cudaMemcpy(&value, target, sizeof(double), cudaMemcpyDeviceToHost);
+    return value;
+}
+
 float
 NDArray_VFLOATF_I(float *target, int index) {
     float value;

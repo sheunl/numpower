@@ -1,13 +1,13 @@
 --TEST--
-NDArray::inv
+NumPower::inv
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-$b = \NDArray::array([[5, 6], [7, 8]]);
-$c = \NDArray::array([9, 10]);
-$d = \NDArray::array([[9], [10]]);
-print_r(\NDArray::inv($a)->toArray());
-print_r(\NDArray::inv([[1, 2], [3, 4]])->toArray());
+$a = NumPower::array([[1, 2], [3, 4]]);
+$b = NumPower::array([[5, 6], [7, 8]]);
+$c = NumPower::array([9, 10]);
+$d = NumPower::array([[9], [10]]);
+print_r(NumPower::inv($a)->toArray());
+print_r(NumPower::inv([[1, 2], [3, 4]])->toArray());
 ?>
 --EXPECT--
 Array

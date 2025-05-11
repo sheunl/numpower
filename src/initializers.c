@@ -23,6 +23,28 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
 #pragma ide diagnostic ignored "NullDereference"
+
+/**
+ * Get number of dimensions from php_array
+ *
+ * @param arr
+ * @return
+ */
+int get_num_dims_from_zval(zval *arr) {
+    int num_dims = 0;
+
+    if (zend_array_count(Z_ARRVAL_P(arr)) == 0) {
+        return 1;
+    }
+
+    zval *val = zend_hash_index_find(Z_ARRVAL_P(arr), 0);
+    while (val && Z_TYPE_P(val) == IS_ARRAY) {
+        num_dims++;
+        val = zend_hash_index_find(Z_ARRVAL_P(val), 0);
+    }
+    return num_dims+1;
+}
+
 /**
  *
  * @param arr
@@ -72,26 +94,7 @@ int is_packed_zend_array(zend_array *arr) {
     }
 }
 
-/**
- * Get number of dimensions from php_array
- *
- * @param arr
- * @return
- */
-int get_num_dims_from_zval(zval *arr) {
-    int num_dims = 0;
 
-    if (zend_array_count(Z_ARRVAL_P(arr)) == 0) {
-        return 1;
-    }
-
-    zval *val = zend_hash_index_find(Z_ARRVAL_P(arr), 0);
-    while (val && Z_TYPE_P(val) == IS_ARRAY) {
-        num_dims++;
-        val = zend_hash_index_find(Z_ARRVAL_P(val), 0);
-    }
-    return num_dims+1;
-}
 
 /**
  * Create a new NDArray Descriptor
@@ -151,6 +154,71 @@ int iteration = 0;
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
+
+void
+NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_index) {
+    zval * element;
+
+    ZEND_HASH_FOREACH_VAL(target_zval, element) {
+        ZVAL_DEREF(element);
+        switch (Z_TYPE_P(element)) {
+            case IS_ARRAY:
+                NDArrayFillFromZendArray(target, Z_ARRVAL_P(element), first_index);
+                break;
+            case IS_LONG:
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) zval_get_long(element);
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = zval_get_long(element);
+                }
+            case IS_DOUBLE:
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) zval_get_double(element);
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = zval_get_double(element);
+                }
+                *first_index = *first_index + 1;
+                break;
+            case IS_TRUE:
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) 1.0;
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = (double) 1.0;
+                }
+                *first_index = *first_index + 1;
+                break;
+            case IS_FALSE:
+                if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
+                    float* data_float;
+                    data_float = NDArray_FDATA(target);
+                    data_float[*first_index] = (float) 0.0;
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                    double* data_double;
+                    data_double = NDArray_DDATA(target);
+                    data_double[*first_index] = (double) 0.0;
+                }
+                *first_index = *first_index + 1;
+                break;
+            default:
+                zend_throw_error(NULL, "an element with an invalid type was used at initialization");
+                return;
+        }
+    }
+    ZEND_HASH_FOREACH_END();
+}
+
 /**
  * @param target_carray
  */
@@ -221,7 +289,7 @@ NDArray* Create_NDArray_FromZendArray(zend_array* ht, int ndim) {
 
     // Calculate number of elements
     for (int i = 1; i < ndim; i++) {
-        total_num_elements = total_num_elements * shape[i];
+        total_num_elements *= shape[i];
     }
     NDArray* array = Create_NDArray(shape, ndim, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
     if (ndim != 0) {
@@ -231,7 +299,59 @@ NDArray* Create_NDArray_FromZendArray(zend_array* ht, int ndim) {
         array->data = NULL;
         array->descriptor->numElements = 0;
     }
+
+    array->uuid = -1;
+
     return array;
+}
+
+zend_bool validate_array(zval *arr) {
+    if (Z_TYPE_P(arr) != IS_ARRAY) {
+        return 0;
+    }
+
+    HashTable *ht = Z_ARRVAL_P(arr);
+    if (ht->nNumOfElements == 0) {
+        return 1;
+    }
+
+    zval *first_elem = NULL;
+    zend_ulong idx;
+    zend_string *key;
+
+    ZEND_HASH_FOREACH_KEY_VAL(ht, idx, key, first_elem) {
+        break;
+    } ZEND_HASH_FOREACH_END();
+
+    if (!first_elem) return 1;
+
+    int first_type = Z_TYPE_P(first_elem);
+    uint32_t expected_count = 0;
+
+    if (first_type == IS_ARRAY) {
+        expected_count = zend_hash_num_elements(Z_ARRVAL_P(first_elem));
+    }
+
+    ZEND_HASH_FOREACH_VAL(ht, first_elem) {
+        if (Z_TYPE_P(first_elem) != first_type &&
+            !((Z_TYPE_P(first_elem) == IS_LONG || Z_TYPE_P(first_elem) == IS_DOUBLE) &&
+            (first_type == IS_LONG || first_type == IS_DOUBLE))) {
+                return 0;
+        }
+
+        if (first_type == IS_ARRAY) {
+            HashTable *nested_ht = Z_ARRVAL_P(first_elem);
+            if (zend_hash_num_elements(nested_ht) != expected_count) {
+                return 0;
+            }
+
+            if (!validate_array(first_elem)) {
+                return 0;
+            }
+        }
+    } ZEND_HASH_FOREACH_END();
+
+    return 1;
 }
 
 /**
@@ -243,6 +363,10 @@ NDArray* Create_NDArray_FromZendArray(zend_array* ht, int ndim) {
 NDArray* Create_NDArray_FromZval(zval* php_object) {
     NDArray* new_array = NULL;
     if (Z_TYPE_P(php_object) == IS_ARRAY) {
+        int res = validate_array(php_object);
+        if (!res) {
+            zend_error(E_ERROR, "ARRAY VALIDATION ERROR!");
+        }
         new_array = Create_NDArray_FromZendArray(Z_ARRVAL_P(php_object), get_num_dims_from_zval(php_object));
     }
     return new_array;
@@ -275,6 +399,7 @@ Create_NDArray(int* shape, int ndim, const char* type, const int device) {
     }
 
     rtn = emalloc(sizeof(NDArray));
+    rtn->uuid = -1;
     rtn->descriptor = Create_Descriptor(total_num_elements, type_size, type);
     rtn->flags = 0;
     rtn->ndim = ndim;
@@ -396,6 +521,16 @@ NDArray_Empty(int *shape, int ndim, const char *type, int device) {
             vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(rtn) * sizeof(float));
 #endif
         }
+    } else {
+        if (device == NDARRAY_DEVICE_CPU) {
+            rtn->device = NDARRAY_DEVICE_CPU;
+            rtn->data = emalloc(NDArray_NUMELEMENTS(rtn) * sizeof(double));
+        } else {
+#ifdef HAVE_CUBLAS
+            rtn->device = NDARRAY_DEVICE_GPU;
+            vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(rtn) * sizeof(double));
+#endif
+        }
     }
     return rtn;
 }
@@ -404,8 +539,7 @@ NDArray_Empty(int *shape, int ndim, const char *type, int device) {
  * @param a
  * @return
  */
-NDArray*
-NDArray_EmptyLike(NDArray *a) {
+NDArray* NDArray_EmptyLike(NDArray *a) {
     int *output_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
     memcpy(output_shape, NDArray_SHAPE(a), sizeof(int) * NDArray_NDIM(a));
     return NDArray_Empty(output_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
@@ -709,7 +843,7 @@ NDArray_Diag(NDArray *a) {
  * @return
  */
 NDArray*
-NDArray_Fill(NDArray *a, float fill_value) {
+NDArray_FillFloat(NDArray *a, float fill_value) {
     int i;
 
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
@@ -725,6 +859,22 @@ NDArray_Fill(NDArray *a, float fill_value) {
     return a;
 }
 
+NDArray* NDArray_FillDouble(NDArray *a, double fill_value) {
+    int i;
+
+    if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
+#ifdef HAVE_CUBLAS
+        cuda_fill_float(NDArray_FDATA(a), fill_value, NDArray_NUMELEMENTS(a));
+        return a;
+#endif
+    } else {
+        for (i = 0; i < NDArray_NUMELEMENTS(a); i++) {
+            NDArray_DDATA(a)[i] = fill_value;
+        }
+    }
+    return a;
+}
+
 /**
  * @param a
  * @return
@@ -734,7 +884,7 @@ NDArray_Full(int *shape, int ndim,  double fill_value) {
     int *new_shape = emalloc(sizeof(int) * ndim);
     memcpy(new_shape, shape, sizeof(int) * ndim);
     NDArray *rtn = NDArray_Zeros(new_shape, ndim, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
-    return NDArray_Fill(rtn, (float)fill_value);
+    return NDArray_FillFloat(rtn, (float)fill_value);
 }
 
 /**
@@ -773,7 +923,7 @@ NDArray_CreateFromFloatScalar(float scalar) {
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
-    rtn->descriptor->elsize = sizeof(float );
+    rtn->descriptor->elsize = sizeof(float);
     rtn->descriptor->type = NDARRAY_TYPE_FLOAT32;
     rtn->data = emalloc(sizeof(float));
     rtn->device = NDARRAY_DEVICE_CPU;
@@ -795,6 +945,7 @@ NDArray*
 NDArray_CreateFromLongScalar(long scalar) {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
+    rtn->uuid = -1;
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
@@ -832,8 +983,12 @@ NDArray_Copy(NDArray *a, int device) {
         rtn->flags = 0;
         rtn->base = NULL;
         rtn->ndim = NDArray_NDIM(a);
-        vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(a) * sizeof(float));
-        cudaMemcpy(NDArray_FDATA(rtn), NDArray_FDATA(a), NDArray_NUMELEMENTS(a) * sizeof(float), cudaMemcpyDeviceToDevice);
+        vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a));
+        if (NDArray_TYPE(a) == NDARRAY_TYPE_FLOAT32) {
+            cudaMemcpy(NDArray_FDATA(rtn), NDArray_FDATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
+        } else if (NDArray_TYPE(a) == NDARRAY_TYPE_DOUBLE64) {
+            cudaMemcpy(NDArray_DDATA(rtn), NDArray_DDATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
+        }
         rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
         rtn->descriptor->numElements = NDArray_NUMELEMENTS(a);
         rtn->descriptor->elsize = NDArray_ELSIZE(a);
@@ -859,8 +1014,8 @@ NDArray_Copy(NDArray *a, int device) {
         rtn->flags = 0;
         rtn->ndim = NDArray_NDIM(a);
         rtn->base = NULL;
-        rtn->data = emalloc(NDArray_NUMELEMENTS(a) * sizeof(float));
-        memcpy(NDArray_DATA(rtn), NDArray_DATA(a), NDArray_NUMELEMENTS(a) * sizeof(float));
+        rtn->data = emalloc(NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a));
+        memcpy(NDArray_DATA(rtn), NDArray_DATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a));
         rtn->descriptor = Create_Descriptor(NDArray_NUMELEMENTS(a), NDArray_ELSIZE(a), NDArray_TYPE(a));
         NDArrayIterator_INIT(rtn);
         return rtn;
@@ -939,5 +1094,24 @@ NDArray_Binomial(int *shape, int ndim, int n, float p) {
         }
         NDArray_FDATA(rtn)[i] = (float)successes;
     }
+    return rtn;
+}
+
+NDArray* NDArrayFactory_CreateFromDoubleScalar(double scalar) {
+    NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
+
+    rtn->ndim = 0;
+    rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
+    rtn->descriptor->numElements = 1;
+    rtn->descriptor->elsize = sizeof(double);
+    rtn->descriptor->type = NDARRAY_TYPE_DOUBLE64;
+    rtn->data = emalloc(sizeof(double));
+    rtn->device = NDARRAY_DEVICE_CPU;
+    rtn->strides = emalloc(sizeof(int));
+    rtn->dimensions = emalloc(sizeof(int));
+    rtn->iterator = NULL;
+    rtn->base = NULL;
+    rtn->refcount = 1;
+    ((double*)rtn->data)[0] = (double)scalar;
     return rtn;
 }

@@ -1,11 +1,11 @@
 --TEST--
-NDArray::cosh
+NumPower::cosh
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::cosh($a)->toArray());
-print_r(\NDArray::cosh($a[0])->toArray());
-print_r(\NDArray::cosh([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::cosh($a)->toArray());
+print_r(NumPower::cosh($a[0])->toArray());
+print_r(NumPower::cosh([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

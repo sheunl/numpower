@@ -1,11 +1,11 @@
 --TEST--
-NDArray::square
+NumPower::square
 --FILE--
 <?php
-$a = \NDArray::array([[-156, 150], [19, -39]]);
-print_r(\NDArray::square($a)->toArray());
-print_r(\NDArray::square($a[0])->toArray());
-print_r(\NDArray::square([[0],[-0.5]])->toArray());
+$a = NumPower::array([[-156, 150], [19, -39]]);
+print_r(NumPower::square($a)->toArray());
+print_r(NumPower::square($a[0])->toArray());
+print_r(NumPower::square([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

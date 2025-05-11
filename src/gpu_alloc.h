@@ -14,6 +14,8 @@ void vmemcpyh2d(char* target, char* dst, unsigned int size);
 float NDArray_VFLOAT(char *target);
 float NDArray_VFLOATF_I(float *target, int index);
 
+double NDArray_VDOUBLE(char *target);
+
 #ifdef __cplusplus
 }
 #endif

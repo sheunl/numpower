@@ -1,11 +1,11 @@
 --TEST--
-NDArray::expm1
+NumPower::expm1
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-print_r(\NDArray::expm1($a)->toArray());
-print_r(\NDArray::expm1($a[0])->toArray());
-print_r(\NDArray::expm1([[1],[2]])->toArray());
+$a = NumPower::array([[1, 2], [3, 4]]);
+print_r(NumPower::expm1($a)->toArray());
+print_r(NumPower::expm1($a[0])->toArray());
+print_r(NumPower::expm1([[1],[2]])->toArray());
 ?>
 --EXPECT--
 Array

@@ -1,10 +1,10 @@
 --TEST--
-NDArray::zeros
+NumPower::zeros
 --FILE--
 <?php
-$a = \NDArray::zeros([4]);
+$a = NumPower::zeros([4]);
 print_r($a->toArray());
-$a = \NDArray::zeros([4, 4]);
+$a = NumPower::zeros([4, 4]);
 print_r($a->toArray());
 ?>
 --EXPECT--

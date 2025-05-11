@@ -77,6 +77,7 @@ NDArray_FMatmul(NDArray *a, NDArray *b) {
             &beta,
             (float*)NDArray_FDATA(result), n
         );
+
 #endif
     } else {
         cblas_sgemm(
@@ -253,6 +254,7 @@ NDArray_Matmul(NDArray *a, NDArray *b) {
         zend_throw_error(NULL, "Stack of matrices not allowed");
         return NULL;
     }
+
     return NDArray_FMatmul(a, b);
 }
 
@@ -443,7 +445,7 @@ NDArray_L1Norm(NDArray* target) {
     NDArray *slice;
     while(!NDArrayIterator_ISDONE(ab)) {
         slice = NDArrayIterator_GET(ab);
-        results[ab->iterator->current_index] = NDArray_Sum_Float(slice);
+        results[ab->iterator->currentIndex] = NDArray_Sum_Float(slice);
         NDArray_FREE(slice);
         NDArrayIterator_NEXT(ab);
     }
@@ -587,6 +589,7 @@ NDArray*
 NDArray_Inverse(NDArray* target) {
     int info;
     NDArray *rtn = NDArray_Copy(target, NDArray_DEVICE(target));
+    rtn->uuid = -1;
     if (NDArray_NDIM(target) != 2) {
         zend_throw_error(NULL, "Array must be at least two-dimensional");
         NDArray_FREE(rtn);

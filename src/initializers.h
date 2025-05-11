@@ -4,6 +4,9 @@
 #include <Zend/zend_types.h>
 #include "ndarray.h"
 
+NDArray* NDArrayFactory_CreateFromDoubleScalar(double scalar);
+
+
 NDArray* Create_NDArray(int* shape, int ndim, const char* type, int device);
 NDArray* Create_NDArray_FromZval(zval* php_object);
 NDArray* NDArray_FromNDArray(NDArray *target, int buffer_offset, int* shape, int* strides, const int* ndim);
@@ -16,7 +19,7 @@ NDArray* NDArray_StandardNormal(int* shape, int ndim);
 NDArray* NDArray_Poisson(double lam, int* shape, int ndim);
 NDArray* NDArray_Uniform(double low, double high, int* shape, int ndim);
 NDArray* NDArray_Diag(NDArray *a);
-NDArray* NDArray_Fill(NDArray *a, float fill_value);
+NDArray* NDArray_FillFloat(NDArray *a, float fill_value);
 NDArray* NDArray_Full(int *shape, int ndim,  double fill_value);
 NDArray* NDArray_CreateFromDoubleScalar(double scalar);
 NDArray* NDArray_CreateFromLongScalar(long scalar);
@@ -27,6 +30,9 @@ NDArray* NDArray_Arange(double start, double stop, double step);
 NDArray* NDArray_Binomial(int *shape, int ndim, int n, float p);
 NDArray* NDArray_EmptyLike(NDArray *a);
 NDArray* NDArray_FromNDArrayBase(NDArray *target, char *data_ptr, int* shape, int* strides, const int ndim);
+
+NDArray* NDArray_FillDouble(NDArray *a, double fill_value);
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -849,8 +849,52 @@ void array_sum_float(float *a, float *result, int n) {
     if (tid == 0) atomicAdd(result, sdata[0]);
 }
 
+__global__ void array_sum_reduce_blocks(const double *a, double *block_results, int n) {
+    extern __shared__ double sdataDouble[];
+
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x * (blockDim.x * 2) + threadIdx.x;
+
+    double sum = 0.0;
+
+    if (i < n) sum += a[i];
+    if (i + blockDim.x < n) sum += a[i + blockDim.x];
+
+    sdataDouble[tid] = sum;
+    __syncthreads();
+
+    // Редукция в shared memory
+    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdataDouble[tid] += sdataDouble[tid + s];
+        }
+        __syncthreads();
+    }
+
+    // Только первый поток сохраняет результат блока
+    if (tid == 0) {
+        block_results[blockIdx.x] = sdataDouble[0];
+    }
+}
+
+__global__ void finalize_sum(const double *block_results, double *result, int n) {
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i) {
+        sum += block_results[i];
+    }
+    *result = sum;
+}
+
 __global__
 void fill_float_kernel(float* array, int n, float value) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if(idx < n) {
+        array[idx] = value;
+    }
+}
+
+__global__
+void fill_float_kernel_double(double* array, int n, double value) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     if(idx < n) {
         array[idx] = value;
@@ -932,12 +976,19 @@ extern "C" {
         return 1;
     }
 
-    void
-    cuda_fill_float(float *a, float value, int n) {
+    void cuda_fill_float(float *a, float value, int n) {
         int blockSize = 256;
         int gridSize = (n + blockSize - 1) / blockSize;
 
         fill_float_kernel<<<gridSize, blockSize>>>(a, n, value);
+        cudaDeviceSynchronize();
+    }
+
+    void cuda_fill_double(double *a, double value, int n) {
+        int blockSize = 256;
+        int gridSize = (n + blockSize - 1) / blockSize;
+
+        fill_float_kernel_double<<<gridSize, blockSize>>>(a, n, value);
         cudaDeviceSynchronize();
     }
 
@@ -1702,5 +1753,17 @@ extern "C" {
         cudaFree(d_info);
     }
 
+    void cuda_sum_double(int nblocks, double *a, double *rtn, int nelements) {
+        double *d_sum;
+        int blockSize = 256;  // Number of threads per block. This is a typical choice.
+        int numBlocks = (nblocks + blockSize * 2 - 1) / (blockSize * 2);  // Number of blocks in the grid.
+        cudaMalloc((void **) &d_sum, sizeof(double));
+
+        cudaMemcpy(d_sum, rtn, sizeof(double), cudaMemcpyHostToDevice);
+        array_sum_reduce_blocks<<<numBlocks, blockSize, blockSize * sizeof(double)>>>(a, d_sum, nelements);
+        finalize_sum<<<1, 1>>>(d_sum, rtn, numBlocks);
+        cudaMemcpy(rtn, d_sum, sizeof(double), cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
+    }
 
 }

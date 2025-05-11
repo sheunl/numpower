@@ -1,11 +1,11 @@
 --TEST--
-NDArray::sqrt
+NumPower::sqrt
 --FILE--
 <?php
-$a = \NDArray::array([[-156, 150], [19, -39]]);
-print_r(\NDArray::sqrt($a)->toArray());
-print_r(\NDArray::sqrt($a[0])->toArray());
-print_r(\NDArray::sqrt([[0],[-0.5]])->toArray());
+$a = NumPower::array([[-156, 150], [19, -39]]);
+print_r(NumPower::sqrt($a)->toArray());
+print_r(NumPower::sqrt($a[0])->toArray());
+print_r(NumPower::sqrt([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

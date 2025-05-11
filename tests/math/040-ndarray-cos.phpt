@@ -1,11 +1,11 @@
 --TEST--
-NDArray::cos
+NumPower::cos
 --FILE--
 <?php
-$a = \NDArray::array([[0, -0.5], [0, -0.5]]);
-print_r(\NDArray::cos($a)->toArray());
-print_r(\NDArray::cos($a[0])->toArray());
-print_r(\NDArray::cos([[0],[-0.5]])->toArray());
+$a = NumPower::array([[0, -0.5], [0, -0.5]]);
+print_r(NumPower::cos($a)->toArray());
+print_r(NumPower::cos($a[0])->toArray());
+print_r(NumPower::cos([[0],[-0.5]])->toArray());
 ?>
 --EXPECT--
 Array

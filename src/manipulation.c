@@ -42,7 +42,7 @@ check_and_adjust_axis_msg(int *axis, int ndim) {
     if (axis == NULL) {
         return 0;
     }
-    if (NDARRAY_UNLIKELY((*axis < -ndim) || (*axis >= ndim))) {
+    if ((*axis < -ndim) || (*axis >= ndim)) {
         zend_throw_error(NULL, "Axis is out of bounds for array dimension");
         return -1;
     }
@@ -112,7 +112,7 @@ NDArray_Transpose(NDArray *a, NDArray_Dims *permute) {
         NDArray_SHAPE(ret)[i] = NDArray_SHAPE(a)[permutation[i]];
         NDArray_STRIDES(ret)[i] = NDArray_STRIDES(a)[permutation[i]];
     }
-    NDArray_ENABLEFLAGS(ret, NDARRAY_ARRAY_F_CONTIGUOUS);
+    NDArray_enableFlags(ret, NDARRAY_ARRAY_F_CONTIGUOUS);
 
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_CPU || (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU && NDArray_NDIM(a) != 2)) {
         NDArray * contiguous_ret;
@@ -168,6 +168,7 @@ NDArray_Reshape(NDArray *target, int *new_shape, int ndim) {
 NDArray*
 NDArray_Flatten(NDArray *target) {
     NDArray *rtn = NDArray_Copy(target, NDArray_DEVICE(target));
+    rtn->uuid = -1;
     rtn->ndim = 1;
     if (NDArray_NDIM(target) == 0) {
         rtn->dimensions[0] = 1;
@@ -269,7 +270,7 @@ NDArray_Slice(NDArray* array, NDArray** indexes, int num_indices) {
     NDArray *fret = NDArray_FromNDArrayBase(array, data_ptr, shape_ptr, strides_ptr, new_dim);
 
     if (num_indices > 1) {
-        NDArray_ENABLEFLAGS(fret, NDARRAY_ARRAY_F_CONTIGUOUS);
+        NDArray_enableFlags(fret, NDARRAY_ARRAY_F_CONTIGUOUS);
         ret = NDArray_ToContiguous(fret);
         NDArray_FREE(fret);
     } else {
