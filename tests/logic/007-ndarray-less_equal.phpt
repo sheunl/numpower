@@ -2,12 +2,12 @@
 NDArray::lessEqual
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
-$b = \NDArray::array([[5, 6], [7, 8]]);
-$c = \NDArray::array([9, 10]);
-print_r(\NDArray::lessEqual($a, $b)->toArray());
-print_r(\NDArray::lessEqual($a, $a)->toArray());
-print_r(\NDArray::lessEqual($c, $c)->toArray());
+$a = NumPower::array([[1, 2], [3, 4]]);
+$b = NumPower::array([[5, 6], [7, 8]]);
+$c = NumPower::array([9, 10]);
+print_r(NumPower::lessEqual($a, $b)->toArray());
+print_r(NumPower::lessEqual($a, $a)->toArray());
+print_r(NumPower::lessEqual($c, $c)->toArray());
 ?>
 --EXPECT--
 Array

@@ -1,8 +1,8 @@
 --TEST--
-NDArray::transpose
+NumPower::transpose
 --FILE--
 <?php
-use \NDArray as nd;
+use NumPower as nd;
 
 $a = nd::array([[1, 2], [3, 4]]);
 $b = nd::array([[1, 3, 2], [3, 4, 1]]);

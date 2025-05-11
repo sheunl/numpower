@@ -1,14 +1,14 @@
 --TEST--
-NDArray::array
+NumPower::array
 --FILE--
 <?php
-$a = \NDArray::array([[1, 2], [3, 4]]);
+$a = NumPower::array([[1, 2], [3, 4]]);
 print_r($a->toArray());
-$a = \NDArray::array([]);
+$a = NumPower::array([]);
 print_r($a->toArray());
-$a = new \NDArray([[1, 2], [3, 4]]);
+$a = new NDArray([[1, 2], [3, 4]]);
 print_r($a->toArray());
-$a = new \NDArray([]);
+$a = new NDArray([]);
 print_r($a->toArray());
 ?>
 --EXPECT--
