@@ -4247,6 +4247,7 @@ PHP_METHOD(NumPower, matmul) {
     }
     CHECK_INPUT_AND_FREE(a, nda);
     CHECK_INPUT_AND_FREE(b, ndb);
+
     ndarray_init_new_object(rtn, return_value);
 }
 

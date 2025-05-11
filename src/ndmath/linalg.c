@@ -56,7 +56,7 @@ NDArray_FMatmul(NDArray *a, NDArray *b) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
-    if (NDArray_DEVICE(a) != NDARRAY_DEVICE_GPU) {
+    if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
         static cublasHandle_t handle = NULL;
         static bool handle_initialized = false;
@@ -254,6 +254,7 @@ NDArray_Matmul(NDArray *a, NDArray *b) {
         zend_throw_error(NULL, "Stack of matrices not allowed");
         return NULL;
     }
+
     return NDArray_FMatmul(a, b);
 }
 
