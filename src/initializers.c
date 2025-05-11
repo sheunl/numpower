@@ -942,6 +942,7 @@ NDArray*
 NDArray_CreateFromLongScalar(long scalar) {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
+    rtn->uuid = -1;
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;

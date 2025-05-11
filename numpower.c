@@ -373,6 +373,9 @@ typedef struct {
 } NumPowerObject;
 
 static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, zval *op2) { /* {{{ */
+
+    zend_object *obj = Z_OBJ_P(op1);
+
     NDArray *nda = ZVAL_TO_NDARRAY(op1);
     NDArray *ndb = ZVAL_TO_NDARRAY(op2);
 
@@ -410,6 +413,7 @@ static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, z
         break;
     case ZEND_MUL:
         rtn = NDArray_Multiply_Float(nda, ndb);
+            rtn->uuid = -1;
         break;
     case ZEND_DIV:
         rtn = NDArray_Divide_Float(nda, ndb);
@@ -423,8 +427,16 @@ static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, z
     default:
         return FAILURE;
     }
+        printf("RC 1:%d\n",GC_REFCOUNT(obj));
     CHECK_INPUT_AND_FREE(op1, nda);
     CHECK_INPUT_AND_FREE(op2, ndb);
+        printf("RC 2:%d\n",GC_REFCOUNT(obj));
+    if (GC_REFCOUNT(obj) == 1) {
+        printf("UUID:%d\n",rtn->uuid);
+        rtn->uuid = nda->uuid;
+        printf("UUID:%d\n",rtn->uuid);
+        rtn->data = nda->data;
+    }
     ndarray_init_new_object(rtn, result);
     if (rtn != NULL) {
         return SUCCESS;
@@ -494,10 +506,12 @@ int arithmetic_do_operation(zend_uchar opcode, zval *result, zval *op1, zval *op
 
 static void ndarray_destructor(zend_object* object) {
     zval *obj_uuid = OBJ_PROP_NUM(object, 0);
-    if (GC_REFCOUNT(object) <= 1 && Z_TYPE_P(obj_uuid) != IS_UNDEF) {
-        buffer_ndarray_free((int)Z_LVAL_P(obj_uuid));
-        zend_object_std_dtor(object);
+
+    if (Z_TYPE_P(obj_uuid) == IS_LONG) {
+        buffer_ndarray_free(Z_LVAL_P(obj_uuid));
     }
+
+    zend_object_std_dtor(object); // всегда вызывается
 }
 
 static void ndarray_objects_init(zend_class_entry *class_type) {
@@ -4190,6 +4204,17 @@ PHP_METHOD(NumPower, syncDevice) {
 #endif    
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_ndarray_rc, 0)
+ZEND_ARG_INFO(0, a)
+ZEND_END_ARG_INFO()
+PHP_METHOD(NumPower, rc) {
+    zval *a;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+    Z_PARAM_ZVAL(a)
+    ZEND_PARSE_PARAMETERS_END();
+    RETVAL_LONG(Z_REFCOUNT_P(a));
+}
+
 /**
  * NumPower::matmul
  */
@@ -5348,6 +5373,7 @@ static const zend_function_entry class_NumPower_methods[] = {
     ZEND_ME(NumPower, randomBinomial, arginfo_ndarray_binomial, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
 
     // LINALG
+    ZEND_ME(NumPower, rc, arginfo_ndarray_rc, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     ZEND_ME(NumPower, matmul, arginfo_ndarray_matmul, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     ZEND_ME(NumPower, svd, arginfo_ndarray_svd, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     ZEND_ME(NumPower, det, arginfo_ndarray_det, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
