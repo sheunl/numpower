@@ -589,6 +589,7 @@ NDArray*
 NDArray_Inverse(NDArray* target) {
     int info;
     NDArray *rtn = NDArray_Copy(target, NDArray_DEVICE(target));
+    rtn->uuid = -1;
     if (NDArray_NDIM(target) != 2) {
         zend_throw_error(NULL, "Array must be at least two-dimensional");
         NDArray_FREE(rtn);
