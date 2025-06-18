@@ -3690,6 +3690,7 @@ PHP_METHOD(NumPower, pow) {
         return;
     }
     rtn = NDArray_Pow_Float(nda, ndb);
+    rtn->uuid = -1;
     CHECK_INPUT_AND_FREE(a, nda);
     CHECK_INPUT_AND_FREE(b, ndb);
     ndarray_init_new_object(rtn, return_value);
@@ -3764,6 +3765,7 @@ PHP_METHOD(NumPower, divide) {
         zend_throw_error(NULL, "Can´t broadcast array.");
     }
     rtn = NDArray_Divide_Float(nda, ndb);
+    rtn->uuid = -1;
     CHECK_INPUT_AND_FREE(a, nda);
     CHECK_INPUT_AND_FREE(b, ndb);
     ndarray_init_new_object(rtn, return_value);
