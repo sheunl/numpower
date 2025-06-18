@@ -3671,24 +3671,33 @@ ZEND_END_ARG_INFO()
 PHP_METHOD(NumPower, pow) {
     NDArray *rtn = NULL;
     zval *a, *b;
-    long axis;
+
     ZEND_PARSE_PARAMETERS_START(2, 2)
-    Z_PARAM_ZVAL(a)
-    Z_PARAM_ZVAL(b)
+        Z_PARAM_ZVAL(a)
+        Z_PARAM_ZVAL(b)
     ZEND_PARSE_PARAMETERS_END();
+
     NDArray *nda = ZVAL_TO_NDARRAY(a);
     NDArray *ndb = ZVAL_TO_NDARRAY(b);
+
     if (nda == NULL) {
         return;
     }
+
     if (ndb == NULL) {
         CHECK_INPUT_AND_FREE(a, nda);
         return;
     }
+
     if (!NDArray_ShapeCompare(nda, ndb)) {
         zend_throw_error(NULL, "Incompatible shapes");
         return;
     }
+
+    if (!NDArray_IsBroadcastable(nda, ndb)) {
+        zend_throw_error(NULL, "Can´t broadcast array.");
+    }
+
     rtn = NDArray_Pow_Float(nda, ndb);
     rtn->uuid = -1;
     CHECK_INPUT_AND_FREE(a, nda);
@@ -3706,7 +3715,6 @@ ZEND_END_ARG_INFO()
 PHP_METHOD(NumPower, multiply) {
     NDArray *rtn = NULL;
     zval *a, *b;
-    long axis;
 
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_ZVAL(a)

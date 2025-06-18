@@ -1171,6 +1171,10 @@ NDArray_ToCPU(NDArray *target) {
  */
 int
 NDArray_ShapeCompare(NDArray *a, NDArray *b) {
+    if (NDArray_NDIM(b) == 0) {
+        return 1;
+    }
+
     if (NDArray_NDIM(a) != NDArray_NDIM(b)) {
         return 0;
     }
