@@ -92,7 +92,7 @@ print_array_float32(float* buffer, int ndims, int* shape, int* strides, int cur_
                 offset += index[k] * strides[k];
             }
             // Print the element
-            sprintf(str + strlen(str), "%g", buffer[offset / sizeof(float)]);
+            sprintf(str + strlen(str), "%.8g", buffer[offset / sizeof(float)]);
 
             // Print a comma if this is not the last element in the dimension
             if (i < shape[cur_dim] - 1) {
@@ -206,7 +206,7 @@ print_array_float64(double* buffer, int ndims, int* shape, int* strides, int cur
     }
 
     // Allocate memory for the string
-    str = (char*)emalloc(10000000 * sizeof(char));
+    str = (char*)emalloc(num_elements * 64 * sizeof(char));
     if (str == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for string.\n");
         exit(1);
@@ -231,7 +231,7 @@ print_array_float64(double* buffer, int ndims, int* shape, int* strides, int cur
                 offset += index[k] * strides[k];
             }
             // Print the element
-            sprintf(str + strlen(str), "%g", buffer[offset / sizeof(double)]);
+            sprintf(str + strlen(str), "%.16g", buffer[offset / sizeof(double)]);
 
             // Print a comma if this is not the last element in the dimension
             if (i < shape[cur_dim] - 1) {

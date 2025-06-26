@@ -1607,28 +1607,28 @@ extern "C" {
     NDArray*
     NDArrayMathGPU_ElementWise(NDArray* ndarray, ElementWiseFloatGPUOperation op) {
         NDArray *rtn = NDArray_Copy(ndarray, NDArray_DEVICE(ndarray));
-        op(NDArray_NUMELEMENTS(rtn), NDArray_FDATA(rtn));
+        op(NDArray_NUMELEMENTS(rtn), NDArray_F32DATA(rtn));
         return rtn;
     }
 
     NDArray*
     NDArrayMathGPU_ElementWise1F(NDArray* ndarray, ElementWiseFloatGPUOperation1F op, float val1) {
         NDArray *rtn = NDArray_Copy(ndarray, NDArray_DEVICE(ndarray));
-        op(NDArray_NUMELEMENTS(rtn), NDArray_FDATA(rtn), val1);
+        op(NDArray_NUMELEMENTS(rtn), NDArray_F32DATA(rtn), val1);
         return rtn;
     }
 
     NDArray*
     NDArrayMathGPU_ElementWise1N(NDArray* ndarray, ElementWiseFloatGPUOperation1N op, NDArray* val1) {
         NDArray *rtn = NDArray_Copy(ndarray, NDArray_DEVICE(ndarray));
-        op(NDArray_NUMELEMENTS(rtn), NDArray_FDATA(rtn), NDArray_FDATA(val1));
+        op(NDArray_NUMELEMENTS(rtn), NDArray_F32DATA(rtn), NDArray_F32DATA(val1));
         return rtn;
     }
 
     NDArray*
     NDArrayMathGPU_ElementWise2F(NDArray* ndarray, ElementWiseFloatGPUOperation2F op, float val1, float val2) {
         NDArray *rtn = NDArray_Copy(ndarray, NDArray_DEVICE(ndarray));
-        op(NDArray_NUMELEMENTS(rtn), NDArray_FDATA(rtn), val1, val2);
+        op(NDArray_NUMELEMENTS(rtn), NDArray_F32DATA(rtn), val1, val2);
         return rtn;
     }
 
