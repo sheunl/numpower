@@ -8,7 +8,7 @@
  * @return
  */
 int get_type_size(const char *type) {
-    if (!strcmp(type, NDARRAY_TYPE_DOUBLE64)) {
+    if (!strcmp(type, NDARRAY_TYPE_FLOAT64)) {
         return sizeof(double);
     }
     if (!strcmp(type, NDARRAY_TYPE_FLOAT32)) {

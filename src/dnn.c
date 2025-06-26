@@ -279,8 +279,8 @@ NDArrayDNN_Conv2D_Forward(NDArray *x, NDArray *filters, int *kernel_size, char a
         int nkernel = NDArray_SHAPE(filters)[2];
         int num_channels = NDArray_SHAPE(x)[1];
         int num_filters = NDArray_SHAPE(filters)[3];
-        float *data = dnn_conv2d_forward(NDArray_FDATA(x),num_filters, NULL, NDArray_FDATA(filters), NULL, NULL, 'v', NULL, NDArray_SHAPE(x)[0], num_channels,
-                                              NDArray_SHAPE(x)[2], NDArray_SHAPE(x)[3], nkernel, NDArray_NUMELEMENTS(x), output_shape);
+        float *data = dnn_conv2d_forward(NDArray_F32DATA(x), num_filters, NULL, NDArray_F32DATA(filters), NULL, NULL, 'v', NULL, NDArray_SHAPE(x)[0], num_channels,
+                                         NDArray_SHAPE(x)[2], NDArray_SHAPE(x)[3], nkernel, NDArray_NUMELEMENTS(x), output_shape);
         rtn = NDArray_Empty(output_shape, 4, NDArray_TYPE(x), NDArray_DEVICE(x));
         NDArray_FREEDATA(rtn);
         rtn->data = (void*)data;
@@ -290,7 +290,7 @@ NDArrayDNN_Conv2D_Forward(NDArray *x, NDArray *filters, int *kernel_size, char a
 #ifdef HAVE_CUDNN
         int *output_shape = emalloc(sizeof(int) * 4);
         float *output = cuda_dnn_conv2d_float32(
-                NDArray_FDATA(x),
+                NDArray_F32DATA(x),
                 NDArray_SHAPE(x)[3],
                 NDArray_NUMELEMENTS(x),
                 NDArray_SHAPE(x)[0],
@@ -327,10 +327,10 @@ NDArrayDNN_Conv2D_Backward(NDArray *input, NDArray *y, NDArray *filters, int ker
         int input_w = NDArray_SHAPE(input)[3];
         int nweights = NDArray_NUMELEMENTS(filters);
 
-        float **outputs = backward_convolutional_layer(num_filters, NDArray_FDATA(y),nkernel,
-                                     num_channels, out_w, out_h,
-                                     nweights, input_w, input_h, NDArray_FDATA(input),
-                                     stride, pad, batch_size, NDArray_FDATA(filters));
+        float **outputs = backward_convolutional_layer(num_filters, NDArray_F32DATA(y), nkernel,
+                                                       num_channels, out_w, out_h,
+                                                       nweights, input_w, input_h, NDArray_F32DATA(input),
+                                                       stride, pad, batch_size, NDArray_F32DATA(filters));
 
         // Build dW
         int *output_shape_dw = emalloc(sizeof(int) * 4);
@@ -356,7 +356,7 @@ NDArrayDNN_Conv2D_Backward(NDArray *input, NDArray *y, NDArray *filters, int ker
         int *output_shape = emalloc(sizeof(int) * 4);
         memcpy(output_shape, NDArray_SHAPE(y), NDArray_NDIM(y) * sizeof(int));
         rtn_dw = NDArray_Empty(output_shape, 4, NDArray_TYPE(y), NDArray_DEVICE(y));
-        rtn_dw->data = (void*)cuda_dnn_conv2d_float32_backward(NDArray_FDATA(input), NDArray_FDATA(y), NDArray_FDATA(filters), 1, 0, 10, 32, 32, 3, 4, 'v');
+        rtn_dw->data = (void*)cuda_dnn_conv2d_float32_backward(NDArray_F32DATA(input), NDArray_F32DATA(y), NDArray_F32DATA(filters), 1, 0, 10, 32, 32, 3, 4, 'v');
 #else
         zend_throw_error(NULL, "DNN features for GPU not enabled. You must compile the NumPower extension in an environment with the cuDNN library available.");
         return NULL;
@@ -459,6 +459,6 @@ NDArray_DNN_Conv1D(NDArray *a, NDArray *kernel)
     out_shape[0] = 2;
     out_shape[1] = 3;
     NDArray *output = NDArray_Zeros(out_shape, 2, NDArray_TYPE(a), NDArray_DEVICE(a));
-    conv1d_optimized(NDArray_FDATA(a), NDArray_FDATA(output), NDArray_FDATA(kernel), 3, 2, 2, 3, 1, NULL, 1, 0, 'z');
+    conv1d_optimized(NDArray_F32DATA(a), NDArray_F32DATA(output), NDArray_F32DATA(kernel), 3, 2, 2, 3, 1, NULL, 1, 0, 'z');
     return output;
 }

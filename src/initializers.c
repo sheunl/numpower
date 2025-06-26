@@ -168,21 +168,21 @@ NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_in
             case IS_LONG:
                 if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(target);
+                    data_float = NDArray_F32DATA(target);
                     data_float[*first_index] = (float) zval_get_long(element);
-                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(target);
+                    data_double = NDArray_F64DATA(target);
                     data_double[*first_index] = zval_get_long(element);
                 }
             case IS_DOUBLE:
                 if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(target);
+                    data_float = NDArray_F32DATA(target);
                     data_float[*first_index] = (float) zval_get_double(element);
-                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(target);
+                    data_double = NDArray_F64DATA(target);
                     data_double[*first_index] = zval_get_double(element);
                 }
                 *first_index = *first_index + 1;
@@ -190,11 +190,11 @@ NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_in
             case IS_TRUE:
                 if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(target);
+                    data_float = NDArray_F32DATA(target);
                     data_float[*first_index] = (float) 1.0;
-                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(target);
+                    data_double = NDArray_F64DATA(target);
                     data_double[*first_index] = (double) 1.0;
                 }
                 *first_index = *first_index + 1;
@@ -202,11 +202,11 @@ NDArrayFillFromZendArray(NDArray* target, zend_array* target_zval, int* first_in
             case IS_FALSE:
                 if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(target);
+                    data_float = NDArray_F32DATA(target);
                     data_float[*first_index] = (float) 0.0;
-                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(target) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(target);
+                    data_double = NDArray_F64DATA(target);
                     data_double[*first_index] = (double) 0.0;
                 }
                 *first_index = *first_index + 1;
@@ -235,25 +235,25 @@ NDArray_CopyFromZendArray(NDArray* target, zend_array* target_zval, int * first_
                 break;
             case IS_LONG:
                 convert_to_long(element);
-                data_double = NDArray_FDATA(target);
+                data_double = NDArray_F32DATA(target);
                 data_double[*first_index] = (float) zval_get_long(element);
                 *first_index = *first_index + 1;
                 break;
             case IS_TRUE:
                 convert_to_long(element);
-                data_double = NDArray_FDATA(target);
+                data_double = NDArray_F32DATA(target);
                 data_double[*first_index] = (float) 1.0;
                 *first_index = *first_index + 1;
                 break;
             case IS_FALSE:
                 convert_to_long(element);
-                data_double = NDArray_FDATA(target);
+                data_double = NDArray_F32DATA(target);
                 data_double[*first_index] = (float) 0.0;
                 *first_index = *first_index + 1;
                 break;
             case IS_DOUBLE:
                 convert_to_double(element);
-                data_double = NDArray_FDATA(target);
+                data_double = NDArray_F32DATA(target);
                 data_double[*first_index] = (float) zval_get_double(element);
                 *first_index = *first_index + 1;
                 break;
@@ -561,7 +561,7 @@ NDArray_Zeros(int *shape, int ndim, const char *type, const int device) {
     }
 
     if (device == NDARRAY_DEVICE_CPU) {
-        if (is_type(type, NDARRAY_TYPE_DOUBLE64)) {
+        if (is_type(type, NDARRAY_TYPE_FLOAT64)) {
             rtn->data = ecalloc(rtn->descriptor->numElements, sizeof(double));
         }
         if (is_type(type, NDARRAY_TYPE_FLOAT32)) {
@@ -570,7 +570,7 @@ NDArray_Zeros(int *shape, int ndim, const char *type, const int device) {
     }
 #ifdef HAVE_CUBLAS
     if (device == NDARRAY_DEVICE_GPU) {
-        if (is_type(type, NDARRAY_TYPE_DOUBLE64)) {
+        if (is_type(type, NDARRAY_TYPE_FLOAT64)) {
             vmalloc((void**)(&rtn->data), rtn->descriptor->numElements * sizeof(double));
             cudaMemset(rtn->data, 0, rtn->descriptor->numElements * sizeof(double));
         }
@@ -600,7 +600,7 @@ NDArray_Ones(int *shape, int ndim, const char *type) {
     long i;
     rtn->data = emalloc(sizeof(float) * NDArray_NUMELEMENTS(rtn));
     for (i = 0; i < NDArray_NUMELEMENTS(rtn); i++) {
-        NDArray_FDATA(rtn)[i] = (float)1.0;
+        NDArray_F32DATA(rtn)[i] = (float)1.0;
     }
     return rtn;
 }
@@ -634,7 +634,7 @@ NDArray_Identity(int size) {
     shape[1] = size;
     rtn = NDArray_Zeros(shape, 2, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
 
-    buffer_ptr = NDArray_FDATA(rtn);
+    buffer_ptr = NDArray_F32DATA(rtn);
     // Set the diagonal elements to one with the specified stride
     for (int i = 0; i < size; i++) {
         index = ((i * size * sizeof(float)) + (i * sizeof(float))) / sizeof(float);
@@ -662,7 +662,7 @@ NDArray_TruncatedNormal(double loc, double scale, int* shape, int ndim, int acce
 #ifdef HAVE_CUBLAS
         rtn = NDArray_Zeros(shape, ndim, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_GPU);
         int size = NDArray_NUMELEMENTS(rtn);
-        cuda_truncated_normal(NDArray_FDATA(rtn), size, loc, scale);
+        cuda_truncated_normal(NDArray_F32DATA(rtn), size, loc, scale);
 #endif
     } else {
         rtn = NDArray_Zeros(shape, ndim, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
@@ -673,7 +673,7 @@ NDArray_TruncatedNormal(double loc, double scale, int* shape, int ndim, int acce
                 float u2 = (float)rand() / (float)RAND_MAX;
                 z = sqrtf(-2.0f * logf(u1)) * cosf(2.0f * (float)M_PI * u2);
                 z = (float)loc + (float)scale * z;
-                NDArray_FDATA(rtn)[i] = z;
+                NDArray_F32DATA(rtn)[i] = z;
             } while (z < (loc - 2.0 * scale) || z > (loc + 2.0 * scale));
         }
     }
@@ -733,10 +733,10 @@ NDArray_Normal(double loc, double scale, int* shape, int ndim, int accelerator) 
             float factor = sqrt(-2.0f * log(s) / s);
             float z1 = u * factor;
 
-            NDArray_FDATA(rtn)[i] = (float)loc + (float)scale * z1;
+            NDArray_F32DATA(rtn)[i] = (float)loc + (float)scale * z1;
             if (i + 1 < size) {
                 float z2 = v * factor;
-                NDArray_FDATA(rtn)[i+1] = (float)loc + (float)scale * z2;
+                NDArray_F32DATA(rtn)[i + 1] = (float)loc + (float)scale * z2;
             }
         }
     }
@@ -777,7 +777,7 @@ NDArray_Poisson(double lam, int* shape, int ndim) {
             float u = (float)rand() / (float)RAND_MAX;
             p *= u;
         } while (p > L);
-        NDArray_FDATA(rtn)[i] = (float)k - 1.0f;
+        NDArray_F32DATA(rtn)[i] = (float)k - 1.0f;
     }
 
     return rtn;
@@ -796,7 +796,7 @@ NDArray_Uniform(double low, double high, int* shape, int ndim) {
     // Generate random samples from the normal distribution
     for (int i = 0; i < NDArray_NUMELEMENTS(rtn); i++) {
         float u = (float)rand() / (float)RAND_MAX;
-        NDArray_FDATA(rtn)[i] = (float)low + u * ((float)high - (float)low);
+        NDArray_F32DATA(rtn)[i] = (float)low + u * ((float)high - (float)low);
     }
     return rtn;
 }
@@ -823,7 +823,7 @@ NDArray_Diag(NDArray *a) {
 
         for (i = 0; i < NDArray_NUMELEMENTS(a); i++) {
             index = ((i * NDArray_STRIDES(rtn)[0]) + (i * NDArray_STRIDES(rtn)[1])) / NDArray_ELSIZE(rtn);
-            NDArray_FDATA(rtn)[index] = NDArray_FDATA(a)[i];
+            NDArray_F32DATA(rtn)[index] = NDArray_F32DATA(a)[i];
         }
     }
 
@@ -848,12 +848,12 @@ NDArray_FillFloat(NDArray *a, float fill_value) {
 
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_fill_float(NDArray_FDATA(a), fill_value, NDArray_NUMELEMENTS(a));
+        cuda_fill_float(NDArray_F32DATA(a), fill_value, NDArray_NUMELEMENTS(a));
         return a;
 #endif
     } else {
         for (i = 0; i < NDArray_NUMELEMENTS(a); i++) {
-            NDArray_FDATA(a)[i] = fill_value;
+            NDArray_F32DATA(a)[i] = fill_value;
         }
     }
     return a;
@@ -864,12 +864,12 @@ NDArray* NDArray_FillDouble(NDArray *a, double fill_value) {
 
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_fill_float(NDArray_FDATA(a), fill_value, NDArray_NUMELEMENTS(a));
+        cuda_fill_float(NDArray_F32DATA(a), fill_value, NDArray_NUMELEMENTS(a));
         return a;
 #endif
     } else {
         for (i = 0; i < NDArray_NUMELEMENTS(a); i++) {
-            NDArray_DDATA(a)[i] = fill_value;
+            NDArray_F64DATA(a)[i] = fill_value;
         }
     }
     return a;
@@ -985,9 +985,9 @@ NDArray_Copy(NDArray *a, int device) {
         rtn->ndim = NDArray_NDIM(a);
         vmalloc((void **) &rtn->data, NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a));
         if (NDArray_TYPE(a) == NDARRAY_TYPE_FLOAT32) {
-            cudaMemcpy(NDArray_FDATA(rtn), NDArray_FDATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
-        } else if (NDArray_TYPE(a) == NDARRAY_TYPE_DOUBLE64) {
-            cudaMemcpy(NDArray_DDATA(rtn), NDArray_DDATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
+            cudaMemcpy(NDArray_F32DATA(rtn), NDArray_F32DATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
+        } else if (NDArray_TYPE(a) == NDARRAY_TYPE_FLOAT64) {
+            cudaMemcpy(NDArray_F64DATA(rtn), NDArray_F64DATA(a), NDArray_NUMELEMENTS(a) * NDArray_ELSIZE(a), cudaMemcpyDeviceToDevice);
         }
         rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
         rtn->descriptor->numElements = NDArray_NUMELEMENTS(a);
@@ -1066,9 +1066,9 @@ NDArray_Arange(double start, double stop, double step) {
     int *rtn_shape = emalloc(sizeof(int));
     rtn_shape[0] = length;
     rtn = NDArray_Zeros(rtn_shape, 1, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
-    NDArray_FDATA(rtn)[0] = (float)start;
+    NDArray_F32DATA(rtn)[0] = (float)start;
     for (i = 1; i < length; i++) {
-        NDArray_FDATA(rtn)[i] = NDArray_FDATA(rtn)[i-1] + step;
+        NDArray_F32DATA(rtn)[i] = NDArray_F32DATA(rtn)[i - 1] + step;
     }
     return rtn;
 }
@@ -1092,7 +1092,7 @@ NDArray_Binomial(int *shape, int ndim, int n, float p) {
                 successes++;
             }
         }
-        NDArray_FDATA(rtn)[i] = (float)successes;
+        NDArray_F32DATA(rtn)[i] = (float)successes;
     }
     return rtn;
 }
@@ -1104,7 +1104,7 @@ NDArray* NDArrayFactory_CreateFromDoubleScalar(double scalar) {
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
     rtn->descriptor->elsize = sizeof(double);
-    rtn->descriptor->type = NDARRAY_TYPE_DOUBLE64;
+    rtn->descriptor->type = NDARRAY_TYPE_FLOAT64;
     rtn->data = emalloc(sizeof(double));
     rtn->device = NDARRAY_DEVICE_CPU;
     rtn->strides = emalloc(sizeof(int));

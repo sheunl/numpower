@@ -71,12 +71,12 @@ NDArray_Quantile(NDArray *target, NDArray *q) {
         return NULL;
     }
 
-    if (NDArray_FDATA(q)[0] < 0 || NDArray_FDATA(q)[0] > 1) {
+    if (NDArray_F32DATA(q)[0] < 0 || NDArray_F32DATA(q)[0] > 1) {
         zend_throw_error(NULL, "Q must be between 0 and 1");
         return NULL;
     }
 
-    float result = calculate_quantile(NDArray_FDATA(target), NDArray_NUMELEMENTS(target), sizeof(float), NDArray_FDATA(q)[0]);
+    float result = calculate_quantile(NDArray_F32DATA(target), NDArray_NUMELEMENTS(target), sizeof(float), NDArray_F32DATA(q)[0]);
     return NDArray_CreateFromFloatScalar(result);
 }
 
@@ -97,7 +97,7 @@ NDArray_Std(NDArray *a) {
         float sum = 0.0f;
 
         for (int i = 0; i < NDArray_NUMELEMENTS(a); i++) {
-            sum += powf(NDArray_FDATA(a)[i] - mean, 2);
+            sum += powf(NDArray_F32DATA(a)[i] - mean, 2);
         }
 
         return NDArray_CreateFromFloatScalar(sqrtf(sum / (float)(NDArray_NUMELEMENTS(a))));
@@ -112,7 +112,7 @@ NDArray_Std(NDArray *a) {
  */
 NDArray*
 NDArray_Variance(NDArray *a) {
-    if (NDArray_TYPE(a) == NDARRAY_TYPE_DOUBLE64) {
+    if (NDArray_TYPE(a) == NDARRAY_TYPE_FLOAT64) {
         NDArray *mean = NDArrayFactory_CreateFromDoubleScalar(NDArray_Sum_Double(a) / NDArray_NUMELEMENTS(a));
         NDArray *subtracted = NDArray_Subtract_Double(a, mean);
         NDArray_FREE(mean);
