@@ -1161,7 +1161,7 @@ NDArray_ToGPU(NDArray *target) {
     rtn->device = NDARRAY_DEVICE_GPU;
 
     vmalloc((void **) &tmp_gpu, NDArray_NUMELEMENTS(target) * NDArray_ELSIZE(target));
-    cudaMemcpy(tmp_gpu, NDArray_F32DATA(target), NDArray_NUMELEMENTS(target) * NDArray_ELSIZE(target), cudaMemcpyHostToDevice);
+    cudaMemcpy(tmp_gpu, NDArray_DATA(target), NDArray_NUMELEMENTS(target) * NDArray_ELSIZE(target), cudaMemcpyHostToDevice);
     cudaError_t err = cudaDeviceSynchronize();
     if (err != cudaSuccess) {
         zend_throw_error(NULL, "Error synchronizing: %s\n", cudaGetErrorString(err));
