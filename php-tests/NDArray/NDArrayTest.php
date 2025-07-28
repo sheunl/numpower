@@ -14,11 +14,16 @@ use Throwable;
 class NDArrayTest extends TestCase
 {
     #[DataProvider('validTypeDataProvider')]
-    #[DoesNotPerformAssertions]
     public function testValidTypeConstructor(string $type): void
     {
         //when
-        new NDArray([1,2], $type);
+        $array = new NDArray([1, 2, '4', '9.25'], $type);
+
+        //then
+        $this->assertEquals(1, $array[0]);
+        $this->assertEquals(2, $array[1]);
+        $this->assertEquals('4', $array[2]);
+        $this->assertEquals(9.25, $array[3]);
     }
 
     public static function validTypeDataProvider(): array
