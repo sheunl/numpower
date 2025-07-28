@@ -24,8 +24,7 @@
  * 
  * @return The number of dimensions in the array
  */
-int _getNumDimsFromZval(zend_array *zendArray)
-{
+int _getNumDimsFromZval(zend_array *zendArray) {
     int num_dims = 0;
 
     if (zend_array_count(zendArray) == 0) {
@@ -60,7 +59,7 @@ bool _isPackedZendArray(zend_array *zendArray) {
  * @param[inout] shape     A pointer to the shape array
  * @param[in]    ndim      The number of dimensions
  */
-void _countZendArrayShape(zend_array* zendArray, int* shape, int ndim) {
+void _countZendArrayShape(zend_array *zendArray, int *shape, int ndim) {
     int i;
 
     if (shape == NULL && ndim != 0) {
@@ -77,15 +76,16 @@ void _countZendArrayShape(zend_array* zendArray, int* shape, int ndim) {
     }
 
     // Traverse the zend array to get the shape
-    zval* val;
-    ZEND_HASH_FOREACH_VAL(zendArray, val) {
-        if (Z_TYPE_P(val) == IS_ARRAY) {
-            _countZendArrayShape(Z_ARRVAL_P(val), shape + 1, ndim - 1);
-            shape[0]++;
-        } else {
-            shape[0]++;
-        }
-    }
+    zval *val;
+    ZEND_HASH_FOREACH_VAL(zendArray, val)
+            {
+                if (Z_TYPE_P(val) == IS_ARRAY) {
+                    _countZendArrayShape(Z_ARRVAL_P(val), shape + 1, ndim - 1);
+                    shape[0]++;
+                } else {
+                    shape[0]++;
+                }
+            }
     ZEND_HASH_FOREACH_END();
 }
 
@@ -96,80 +96,99 @@ void _countZendArrayShape(zend_array* zendArray, int* shape, int ndim) {
  * @param        numElements The number of elements in the array
  * @param        elsize      The size of each element in bytes
  */
-void _createBuffer(NDArray* ndarray, int numElements, int elsize) {
+void _createBuffer(NDArray *ndarray, int numElements, int elsize) {
     ndarray->data = emalloc(numElements * elsize);
 }
 
 /**
- * @brief Fill the NDArray from a zend array
+ * @brief Convert a zval to double safely
  *
- * @param[inout] ndarray     A pointer to the NDArray
- * @param[in]    zendArray   A pointer to the zend array
- * @param[inout] firstIndex  A pointer to the first index
+ * Converts a PHP zval to a C double, handling numeric types,
+ * booleans and strings containing valid float literals.
+ *
+ * @param[in] val Pointer to the zval to convert.
+ *            The value may be a number, boolean, or string.
+ *            Other types will cause a runtime error.
+ *
+ * @return The resulting double value.
+ *
+ * @throws Error If the zval is of an unsupported type or
+ *         the string cannot be parsed as a float.
  */
-void _fillFromZendArray(NDArray* ndarray, zend_array* zendArray, int* firstIndex) {
-    zval * element;
+static double zval_to_double_safe(zval *val) {
+    ZVAL_DEREF(val);
+    switch (Z_TYPE_P(val)) {
+        case IS_LONG:
+            return (double) Z_LVAL_P(val);
+        case IS_DOUBLE:
+            return Z_DVAL_P(val);
+        case IS_TRUE:
+            return 1.0;
+        case IS_FALSE:
+            return 0.0;
+        case IS_STRING: {
+            const char *str = Z_STRVAL_P(val);
+            size_t len = Z_STRLEN_P(val);
+            const char *end = NULL;
 
-    ZEND_HASH_FOREACH_VAL(zendArray, element) {
-        ZVAL_DEREF(element);
-        switch (Z_TYPE_P(element)) {
-            case IS_ARRAY:
-                _fillFromZendArray(ndarray, Z_ARRVAL_P(element), firstIndex);
-                break;
-            case IS_LONG:
-                if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
-                    float* data_float;
-                    data_float = NDArray_F32DATA(ndarray);
-                    data_float[*firstIndex] = (float) zval_get_long(element);
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
-                    double* data_double;
-                    data_double = NDArray_F64DATA(ndarray);
-                    data_double[*firstIndex] = zval_get_long(element);
-                }
-                *firstIndex = *firstIndex + 1;
-                break;
-            case IS_DOUBLE:
-                if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
-                    float* data_float;
-                    data_float = NDArray_F32DATA(ndarray);
-                    data_float[*firstIndex] = (float) zval_get_double(element);
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
-                    double* data_double;
-                    data_double = NDArray_F64DATA(ndarray);
-                    data_double[*firstIndex] = zval_get_double(element);
-                }
-                *firstIndex = *firstIndex + 1;
-                break;
-            case IS_TRUE:
-                if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
-                    float* data_float;
-                    data_float = NDArray_F32DATA(ndarray);
-                    data_float[*firstIndex] = (float) 1.0;
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
-                    double* data_double;
-                    data_double = NDArray_F64DATA(ndarray);
-                    data_double[*firstIndex] = (double) 1.0;
-                }
-                *firstIndex = *firstIndex + 1;
-                break;
-            case IS_FALSE:
-                if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
-                    float* data_float;
-                    data_float = NDArray_F32DATA(ndarray);
-                    data_float[*firstIndex] = (float) 0.0;
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
-                    double* data_double;
-                    data_double = NDArray_F64DATA(ndarray);
-                    data_double[*firstIndex] = (double) 0.0;
-                }
-                *firstIndex = *firstIndex + 1;
-                break;
-            default:
-                zend_throw_error(NULL, "an element with an invalid type was used at initialization");
-                return;
+            double value = zend_strtod(str, &end);
+            if (end != str + len) {
+                zend_throw_error(NULL, "Cannot parse string '%s' as float", str);
+                return 0.0;
+            }
+            return value;
         }
+        default:
+            zend_throw_error(NULL, "Invalid type in NDArray initialization");
+            return 0.0;
     }
-    ZEND_HASH_FOREACH_END();
+}
+
+/**
+ * @brief Store a double value into the NDArray at the given index
+ *
+ * Stores a double value into the raw memory buffer of the NDArray
+ * after converting it to the appropriate internal type (float32 or float64).
+ *
+ * @param[in,out] ndarray Pointer to the NDArray structure. Must be properly initialized.
+ * @param[in]     index   Zero-based index into the array. Caller must ensure it's in bounds.
+ * @param[in]     value   The value to store, which will be cast according to the array's dtype.
+ *
+ * @throws Error If the dtype of the NDArray is not supported (e.g., not float32 or float64).
+ */
+static void set_ndarray_value(NDArray *ndarray, int index, double value) {
+    if (strcmp(NDArray_TYPE(ndarray), NDARRAY_TYPE_FLOAT32) == 0) {
+        float *data = (float *)NDArray_DATA(ndarray);
+        data[index] = (float)value;
+    } else if (strcmp(NDArray_TYPE(ndarray), NDARRAY_TYPE_FLOAT64) == 0) {
+        double *data = (double *)NDArray_DATA(ndarray);
+        data[index] = value;
+    } else {
+        zend_throw_error(NULL, "Unsupported NDArray dtype: %s", NDArray_TYPE(ndarray));
+    }
+}
+
+/**
+ * @brief Fill the NDArray from a zend array (recursive)
+ *
+ * @param[in,out] ndarray     A pointer to the NDArray
+ * @param[in]    zendArray   A pointer to the zend array
+ * @param[in,out] firstIndex  A pointer to the first index
+ */
+void _fillFromZendArray(NDArray *ndarray, zend_array *zendArray, int *firstIndex) {
+    zval *element;
+
+    ZEND_HASH_FOREACH_VAL(zendArray, element)
+    {
+        ZVAL_DEREF(element);
+        if (Z_TYPE_P(element) == IS_ARRAY) {
+            _fillFromZendArray(ndarray, Z_ARRVAL_P(element), firstIndex);
+        } else {
+            double value = zval_to_double_safe(element);
+            set_ndarray_value(ndarray, *firstIndex, value);
+            ++(*firstIndex);
+        }
+    } ZEND_HASH_FOREACH_END();
 }
 
 /**
@@ -184,8 +203,7 @@ void _fillFromZendArray(NDArray* ndarray, zend_array* zendArray, int* firstIndex
  * 
  * @return A pointer to the newly created NDArray, or NULL if the zval is not an array.
  */
-NDArray* _createFromZendArray(zend_array* ht, const char *type)
-{
+NDArray *_createFromZendArray(zend_array *ht, const char *type) {
     int last_index = 0;
     int *shape;
 
@@ -209,8 +227,8 @@ NDArray* _createFromZendArray(zend_array* ht, const char *type)
         total_num_elements = total_num_elements * shape[i];
     }
 
-    NDArray* array = NDArray_create(shape, ndim, type, NDARRAY_DEVICE_CPU);
-    
+    NDArray *array = NDArray_create(shape, ndim, type, NDARRAY_DEVICE_CPU);
+
     if (ndim != 0) {
         _createBuffer(array, total_num_elements, get_type_size(type));
         _fillFromZendArray(array, ht, &last_index);
@@ -231,8 +249,7 @@ NDArray* _createFromZendArray(zend_array* ht, const char *type)
  * 
  * @return A pointer to the newly created NDArray.
  */
-NDArray* _createFloat32FromLongScalar(long scalar)
-{
+NDArray *_createFloat32FromLongScalar(long scalar) {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
     rtn->uuid = -1;
@@ -248,8 +265,8 @@ NDArray* _createFloat32FromLongScalar(long scalar)
     rtn->iterator = NULL;
     rtn->base = NULL;
     rtn->refcount = 1;
-    ((float*)rtn->data)[0] = (float)scalar;
-    
+    ((float *) rtn->data)[0] = (float) scalar;
+
     add_to_buffer(rtn);
 
     return rtn;
@@ -262,8 +279,7 @@ NDArray* _createFloat32FromLongScalar(long scalar)
  * 
  * @return A pointer to the newly created NDArray.
  */
-NDArray* _createFloat32FromDoubleScalar(double scalar)
-{
+NDArray *_createFloat32FromDoubleScalar(double scalar) {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
     rtn->uuid = -1;
@@ -279,7 +295,7 @@ NDArray* _createFloat32FromDoubleScalar(double scalar)
     rtn->iterator = NULL;
     rtn->base = NULL;
     rtn->refcount = 1;
-    ((float*)rtn->data)[0] = (float)scalar;
+    ((float *) rtn->data)[0] = (float) scalar;
 
     add_to_buffer(rtn);
 
@@ -293,8 +309,7 @@ NDArray* _createFloat32FromDoubleScalar(double scalar)
  * 
  * @return A pointer to the newly created NDArray.
  */
-NDArray* _createDouble64FromLongScalar(long scalar)
-{
+NDArray *_createDouble64FromLongScalar(long scalar) {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
     rtn->uuid = -1;
@@ -310,7 +325,7 @@ NDArray* _createDouble64FromLongScalar(long scalar)
     rtn->iterator = NULL;
     rtn->base = NULL;
     rtn->refcount = 1;
-    ((double*)rtn->data)[0] = (double)scalar;
+    ((double *) rtn->data)[0] = (double) scalar;
 
     add_to_buffer(rtn);
 
@@ -324,8 +339,7 @@ NDArray* _createDouble64FromLongScalar(long scalar)
  * 
  * @return A pointer to the newly created NDArray.
  */
-NDArray* _createDouble64FromDoubleScalar(double scalar)
-{
+NDArray *_createDouble64FromDoubleScalar(double scalar) {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
     rtn->uuid = -1;
@@ -341,7 +355,7 @@ NDArray* _createDouble64FromDoubleScalar(double scalar)
     rtn->iterator = NULL;
     rtn->base = NULL;
     rtn->refcount = 1;
-    ((double*)rtn->data)[0] = scalar;
+    ((double *) rtn->data)[0] = scalar;
 
     add_to_buffer(rtn);
 
@@ -357,7 +371,7 @@ NDArray* _createDouble64FromDoubleScalar(double scalar)
  * 
  * @return The UUID of the object.
  */
-int getObjectUuid(zval* obj) {
+int getObjectUuid(zval *obj) {
     return Z_LVAL_P(OBJ_PROP_NUM(Z_OBJ_P(obj), 0));
 }
 
@@ -369,8 +383,7 @@ int getObjectUuid(zval* obj) {
  * 
  * @return A pointer to the newly created NDArray, or NULL if the zval is not an array.
  */
-NDArray* NDArrayFactory_createFromZval(zval* obj, const char* type)
-{
+NDArray *NDArrayFactory_createFromZval(zval *obj, const char *type) {
     if (Z_TYPE_P(obj) == IS_ARRAY) {
         return _createFromZendArray(Z_ARRVAL_P(obj), type);
     }
@@ -396,10 +409,10 @@ NDArray* NDArrayFactory_createFromZval(zval* obj, const char* type)
             return buffer_get(getObjectUuid(obj));
         }
 #ifdef HAVE_GD
-        zend_string* class_name = Z_OBJ_P(obj)->ce->name;
+        zend_string *class_name = Z_OBJ_P(obj)->ce->name;
         if (strcmp(ZSTR_VAL(class_name), "GdImage") == 0) {
 
-            NDArray* ndarray = NDArray_FromGD(obj, false);
+            NDArray *ndarray = NDArray_FromGD(obj, false);
             add_to_buffer(ndarray);
             return ndarray;
         }
@@ -417,8 +430,7 @@ NDArray* NDArrayFactory_createFromZval(zval* obj, const char* type)
  * 
  * @return A pointer to the restored NDArray, or NULL if the zval is not an NDArray.
  */
-NDArray* NDArrayFactory_restoreFromZval(zval* zvalNdarray)
-{
+NDArray *NDArrayFactory_restoreFromZval(zval *zvalNdarray) {
     if (Z_TYPE_P(zvalNdarray) == IS_OBJECT) {
         zend_class_entry *ce = Z_OBJCE_P(zvalNdarray);
         if (instanceof_function(ce, phpsci_ce_NDArray)) {
