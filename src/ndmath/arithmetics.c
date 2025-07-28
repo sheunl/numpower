@@ -38,11 +38,11 @@ NDArray_Float_Prod(NDArray* a) {
     float value = 1;
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_prod_float(NDArray_NUMELEMENTS(a), NDArray_FDATA(a), &value, NDArray_NUMELEMENTS(a));
+        cuda_prod_float(NDArray_NUMELEMENTS(a), NDArray_F32DATA(a), &value, NDArray_NUMELEMENTS(a));
 #endif
     } else {
         for (int i = 0; i < NDArray_NUMELEMENTS(a); i++) {
-            value *= NDArray_FDATA(a)[i];
+            value *= NDArray_F32DATA(a)[i];
         }
     }
     return value;
@@ -60,11 +60,11 @@ NDArray_Sum_Float(NDArray* a) {
     float value = 0;
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_sum_float(NDArray_NUMELEMENTS(a), NDArray_FDATA(a), &value, NDArray_NUMELEMENTS(a));
+        cuda_sum_float(NDArray_NUMELEMENTS(a), NDArray_F32DATA(a), &value, NDArray_NUMELEMENTS(a));
 #endif
     } else {
         for (int i = 0; i < NDArray_NUMELEMENTS(a); i++) {
-            value += NDArray_FDATA(a)[i];
+            value += NDArray_F32DATA(a)[i];
         }
     }
     return value;
@@ -83,17 +83,17 @@ NDArray_Mean_Float(NDArray* a) {
     float value = 0;
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_sum_float(NDArray_NUMELEMENTS(a), NDArray_FDATA(a), &value, NDArray_NUMELEMENTS(a));
+        cuda_sum_float(NDArray_NUMELEMENTS(a), NDArray_F32DATA(a), &value, NDArray_NUMELEMENTS(a));
         value = value / NDArray_NUMELEMENTS(a);
 #endif
     } else {
 
 #ifdef HAVE_CBLAS
-        value = cblas_sasum(NDArray_NUMELEMENTS(a), NDArray_FDATA(a), 1);
+        value = cblas_sasum(NDArray_NUMELEMENTS(a), NDArray_F32DATA(a), 1);
         value = value / NDArray_NUMELEMENTS(a);
 #else
         for (int i = 0; i < NDArray_NUMELEMENTS(a); i++) {
-            value += NDArray_FDATA(a)[i];
+            value += NDArray_F32DATA(a)[i];
         }
         value = value / NDArray_NUMELEMENTS(a);
 #endif
@@ -153,7 +153,7 @@ NDArray_Median_Float(NDArray* a) {
         return -1;
 #endif
     } else {
-        return calculate_median(NDArray_FDATA(a), NDArray_NUMELEMENTS(a));
+        return calculate_median(NDArray_F32DATA(a), NDArray_NUMELEMENTS(a));
     }
 }
 
@@ -171,13 +171,13 @@ NDArray_Add_Float(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillFloat(a, NDArray_FDATA(a_temp)[0]);
+        a = NDArray_FillFloat(a, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillFloat(b, NDArray_FDATA(b_temp)[0]);
+        b = NDArray_FillFloat(b, NDArray_F32DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -240,7 +240,7 @@ NDArray_Add_Float(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_add_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_add_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                             NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -290,13 +290,13 @@ NDArray* NDArray_Add_Double(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillDouble(a, NDArray_DDATA(a_temp)[0]);
+        a = NDArray_FillDouble(a, NDArray_F64DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillDouble(b, NDArray_DDATA(b_temp)[0]);
+        b = NDArray_FillDouble(b, NDArray_F64DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -349,7 +349,7 @@ NDArray* NDArray_Add_Double(NDArray* a, NDArray* b) {
     result->base = NULL;
     result->flags = 0;  // Set appropriate flags
     result->descriptor = (NDArrayDescriptor *) emalloc(sizeof(NDArrayDescriptor));
-    result->descriptor->type = NDARRAY_TYPE_DOUBLE64;
+    result->descriptor->type = NDARRAY_TYPE_FLOAT64;
     result->descriptor->elsize = sizeof(double);
     result->descriptor->numElements = a_broad->descriptor->numElements;
     result->refcount = 1;
@@ -365,7 +365,7 @@ NDArray* NDArray_Add_Double(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_add_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_add_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                             NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -412,13 +412,13 @@ NDArray_Multiply_Float(NDArray* a, NDArray* b) {
 #ifdef HAVE_CUBLAS
             int *shape = ecalloc(1, sizeof(int));
             NDArray *rtn = NDArray_Empty(shape, 0, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_GPU);
-            cuda_multiply_float(1, NDArray_FDATA(a), NDArray_FDATA(b), NDArray_FDATA(rtn), 1);
+            cuda_multiply_float(1, NDArray_F32DATA(a), NDArray_F32DATA(b), NDArray_F32DATA(rtn), 1);
             return rtn;
 #endif
         } else {
             int *shape = ecalloc(1, sizeof(int));
             NDArray *rtn = NDArray_Empty(shape, 0, NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
-            NDArray_FDATA(rtn)[0] = NDArray_FDATA(a)[0] * NDArray_FDATA(b)[0];
+            NDArray_F32DATA(rtn)[0] = NDArray_F32DATA(a)[0] * NDArray_F32DATA(b)[0];
             return rtn;
         }
     }
@@ -429,13 +429,13 @@ NDArray_Multiply_Float(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillFloat(a, NDArray_FDATA(a_temp)[0]);
+        a = NDArray_FillFloat(a, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillFloat(b, NDArray_FDATA(b_temp)[0]);
+        b = NDArray_FillFloat(b, NDArray_F32DATA(b_temp)[0]);
     }
 
     NDArray *a_broad = NULL, *b_broad = NULL;
@@ -496,7 +496,7 @@ NDArray_Multiply_Float(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_multiply_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_multiply_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                             NDArray_NUMELEMENTS(a_broad));
         result->device = NDARRAY_DEVICE_GPU;
 #endif
@@ -560,13 +560,13 @@ NDArray_Subtract_Float(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillFloat(a, NDArray_FDATA(a_temp)[0]);
+        a = NDArray_FillFloat(a, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillFloat(b, NDArray_FDATA(b_temp)[0]);
+        b = NDArray_FillFloat(b, NDArray_F32DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -629,7 +629,7 @@ NDArray_Subtract_Float(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_subtract_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_subtract_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                             NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -679,13 +679,13 @@ NDArray* NDArray_Subtract_Double(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillDouble(a, NDArray_DDATA(a_temp)[0]);
+        a = NDArray_FillDouble(a, NDArray_F64DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillDouble(b, NDArray_DDATA(b_temp)[0]);
+        b = NDArray_FillDouble(b, NDArray_F64DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -760,7 +760,7 @@ NDArray* NDArray_Subtract_Double(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_subtract_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_subtract_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                             NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -830,7 +830,7 @@ NDArray_Divide_Float(NDArray* a, NDArray* b) {
     if (NDArray_NDIM(a) == 0 && NDArray_NDIM(b) == 0) {
         int *shape = ecalloc(1, sizeof(int));
         NDArray *rtn = NDArray_Zeros(shape, 0, NDARRAY_TYPE_FLOAT32, NDArray_DEVICE(a));
-        NDArray_FDATA(rtn)[0] = NDArray_FDATA(a)[0] / NDArray_FDATA(b)[0];
+        NDArray_F32DATA(rtn)[0] = NDArray_F32DATA(a)[0] / NDArray_F32DATA(b)[0];
         return rtn;
     }
 
@@ -840,13 +840,13 @@ NDArray_Divide_Float(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillFloat(a, NDArray_FDATA(a_temp)[0]);
+        a = NDArray_FillFloat(a, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillFloat(b, NDArray_FDATA(b_temp)[0]);
+        b = NDArray_FillFloat(b, NDArray_F32DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -910,7 +910,7 @@ NDArray_Divide_Float(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_divide_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_divide_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                           NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -966,13 +966,13 @@ NDArray_Mod_Float(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillFloat(a, NDArray_FDATA(a_temp)[0]);
+        a = NDArray_FillFloat(a, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillFloat(b, NDArray_FDATA(b_temp)[0]);
+        b = NDArray_FillFloat(b, NDArray_F32DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -1035,7 +1035,7 @@ NDArray_Mod_Float(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_mod_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_mod_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                        NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -1091,13 +1091,13 @@ NDArray_Pow_Float(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillFloat(a, NDArray_FDATA(a_temp)[0]);
+        a = NDArray_FillFloat(a, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillFloat(b, NDArray_FDATA(b_temp)[0]);
+        b = NDArray_FillFloat(b, NDArray_F32DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -1160,7 +1160,7 @@ NDArray_Pow_Float(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_pow_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_pow_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                        NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -1193,13 +1193,13 @@ NDArray* NDArray_Pow_Double(NDArray* a, NDArray* b) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(b));
         copy(NDArray_SHAPE(b), n_shape, NDArray_NDIM(b));
         a = NDArray_Zeros(n_shape, NDArray_NDIM(b), NDArray_TYPE(b), NDArray_DEVICE(b));
-        a = NDArray_FillDouble(a, NDArray_DDATA(a_temp)[0]);
+        a = NDArray_FillDouble(a, NDArray_F64DATA(a_temp)[0]);
     } else if (NDArray_NDIM(b) == 0 && NDArray_NDIM(a) > 0) {
         b_temp = b;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(a));
         copy(NDArray_SHAPE(a), n_shape, NDArray_NDIM(a));
         b = NDArray_Zeros(n_shape, NDArray_NDIM(a), NDArray_TYPE(a), NDArray_DEVICE(a));
-        b = NDArray_FillDouble(b, NDArray_DDATA(b_temp)[0]);
+        b = NDArray_FillDouble(b, NDArray_F64DATA(b_temp)[0]);
     }
 
     NDArray *broadcasted = NULL;
@@ -1251,7 +1251,7 @@ NDArray* NDArray_Pow_Double(NDArray* a, NDArray* b) {
     result->base = NULL;
     result->flags = 0;  // Set appropriate flags
     result->descriptor = (NDArrayDescriptor *) emalloc(sizeof(NDArrayDescriptor));
-    result->descriptor->type = NDARRAY_TYPE_DOUBLE64;
+    result->descriptor->type = NDARRAY_TYPE_FLOAT64;
     result->descriptor->elsize = sizeof(double);
     result->descriptor->numElements = a_broad->descriptor->numElements;
     result->refcount = 1;
@@ -1267,7 +1267,7 @@ NDArray* NDArray_Pow_Double(NDArray* a, NDArray* b) {
     NDArrayIterator_INIT(result);
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b_broad) == NDARRAY_DEVICE_GPU) {
 #if HAVE_CUBLAS
-        cuda_pow_float(NDArray_NUMELEMENTS(a_broad), NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_pow_float(NDArray_NUMELEMENTS(a_broad), NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                        NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -1319,11 +1319,11 @@ double NDArray_Sum_Double(NDArray* a) {
     
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_sum_double(NDArray_NUMELEMENTS(a), NDArray_DDATA(a), &value, NDArray_NUMELEMENTS(a));
+        cuda_sum_double(NDArray_NUMELEMENTS(a), NDArray_F64DATA(a), &value, NDArray_NUMELEMENTS(a));
 #endif
     } else {
         for (int i = 0; i < NDArray_NUMELEMENTS(a); i++) {
-            value += NDArray_DDATA(a)[i];
+            value += NDArray_F64DATA(a)[i];
         }
     }
     return value;

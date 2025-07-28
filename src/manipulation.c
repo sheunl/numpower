@@ -121,7 +121,7 @@ NDArray_Transpose(NDArray *a, NDArray_Dims *permute) {
         return contiguous_ret;
     } else {
 #ifdef HAVE_CUBLAS
-        cuda_float_transpose(32, 8, NDArray_FDATA(ret), NDArray_FDATA(ret), NDArray_SHAPE(a)[1], NDArray_SHAPE(a)[0]);
+        cuda_float_transpose(32, 8, NDArray_F32DATA(ret), NDArray_F32DATA(ret), NDArray_SHAPE(a)[1], NDArray_SHAPE(a)[0]);
         return ret;
 #endif
     }
@@ -211,15 +211,15 @@ NDArray_Slice(NDArray* array, NDArray** indexes, int num_indices) {
         sliceobj.step = NULL;
         if (NDArray_NUMELEMENTS(indexes[i]) >= 1) {
             sliceobj.start = emalloc(sizeof(int));
-            sliceobj.start[0] = (int) NDArray_FDATA(indexes[i])[0];
+            sliceobj.start[0] = (int) NDArray_F32DATA(indexes[i])[0];
         }
         if (NDArray_NUMELEMENTS(indexes[i]) >= 2) {
             sliceobj.stop = emalloc(sizeof(int));
-            sliceobj.stop[0] = (int) NDArray_FDATA(indexes[i])[1];
+            sliceobj.stop[0] = (int) NDArray_F32DATA(indexes[i])[1];
         }
         if (NDArray_NUMELEMENTS(indexes[i]) == 3) {
             sliceobj.step = emalloc(sizeof(int));
-            sliceobj.step[0] = (int) NDArray_FDATA(indexes[i])[2];
+            sliceobj.step[0] = (int) NDArray_F32DATA(indexes[i])[2];
         }
         if(Slice_GetIndices(&sliceobj, NDArray_SHAPE(array)[orig_dim], &start, &stop, &step, &n_steps) < 0) {
             zend_throw_error(NULL, "Slicing error");
@@ -431,13 +431,13 @@ normalize_axis_vector(NDArray *axis, int ndim) {
     int i = 0;
     while(!NDArrayIterator_ISDONE(axis)) {
         axis_val = NDArrayIterator_GET(axis);
-        int axis_int_val = (int)(NDArray_FDATA(axis_val)[0]);
+        int axis_int_val = (int)(NDArray_F32DATA(axis_val)[0]);
         if (check_and_adjust_axis(&axis_int_val, ndim) < 0) {
             NDArray_FREE(axis_val);
             NDArray_FREE(output);
             return NULL;
         }
-        NDArray_FDATA(output)[i] = (float)axis_int_val;
+        NDArray_F32DATA(output)[i] = (float)axis_int_val;
         NDArrayIterator_NEXT(axis);
         NDArray_FREE(axis_val);
         i++;
@@ -485,7 +485,7 @@ NDArray_ExpandDim(NDArray *a, NDArray *axis) {
     for (int ax = 0; ax < output_ndim; ax++) {
         found  = 0;
         for (int i = 0; i < NDArray_NUMELEMENTS(normalized_axis); i++) {
-            if ((int)(NDArray_FDATA(normalized_axis)[i]) == ax) {
+            if ((int)(NDArray_F32DATA(normalized_axis)[i]) == ax) {
                 found = 1;
                 output_shape[ax] = 1;
                 break;
@@ -625,7 +625,7 @@ NDArray_ConvertMultiAxis(NDArray *axis_in, int ndim, bool *out_axis_flags)
     }
 
     if (NDArray_NDIM(axis_in) == 0) {
-        int axis = (int)NDArray_FDATA(axis_in)[0];
+        int axis = (int)NDArray_F32DATA(axis_in)[0];
 
         memset(out_axis_flags, 0, ndim);
 
@@ -649,7 +649,7 @@ NDArray_ConvertMultiAxis(NDArray *axis_in, int ndim, bool *out_axis_flags)
         return 0;
     }
     for (i = 0; i < naxes; ++i) {
-        int axis = (int)NDArray_FDATA(axis_in)[i];
+        int axis = (int)NDArray_F32DATA(axis_in)[i];
         if (check_and_adjust_axis(&axis, ndim) < 0) {
             return 0;
         }

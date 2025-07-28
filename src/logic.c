@@ -25,7 +25,7 @@
 float
 NDArray_All(NDArray *a) {
     int i;
-    float *array = NDArray_FDATA(a);
+    float *array = NDArray_F32DATA(a);
 #ifdef HAVE_AVX2
     __m256 zero = _mm256_set1_ps(0.0f);
     for (i = 0; i < NDArray_NUMELEMENTS(a) - 7; i += 8) {
@@ -78,13 +78,13 @@ NDArray_Greater(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_F32DATA(b_temp)[0]);
     }
 
     int i;
@@ -118,7 +118,7 @@ NDArray_Greater(NDArray* nda, NDArray* ndb) {
     }
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_float_compare_greater(NDArray_SHAPE(a_broad)[0], NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_float_compare_greater(NDArray_SHAPE(a_broad)[0], NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                                    NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -127,8 +127,8 @@ NDArray_Greater(NDArray* nda, NDArray* ndb) {
         i = 0;
         for (; i < NDArray_NUMELEMENTS(a_broad) - 7; i += 8) {
             // Load 8 elements from each array
-            __m256 vec1 = _mm256_loadu_ps(&NDArray_FDATA(a_broad)[i]);
-            __m256 vec2 = _mm256_loadu_ps(&NDArray_FDATA(b_broad)[i]);
+            __m256 vec1 = _mm256_loadu_ps(&NDArray_F32DATA(a_broad)[i]);
+            __m256 vec2 = _mm256_loadu_ps(&NDArray_F32DATA(b_broad)[i]);
 
             // Compare elements for equality
             __m256 cmp = _mm256_cmp_ps(vec1, vec2, _CMP_GT_OQ);
@@ -138,16 +138,16 @@ NDArray_Greater(NDArray* nda, NDArray* ndb) {
             __m256 resultVec = _mm256_blendv_ps(zeros, ones, cmp);
 
             // Store the results
-            _mm256_storeu_ps(&NDArray_FDATA(result)[i], resultVec);
+            _mm256_storeu_ps(&NDArray_F32DATA(result)[i], resultVec);
         }
 
         // Process remaining elements using scalar operations
         for (; i < NDArray_NUMELEMENTS(a_broad); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(a_broad)[i] > NDArray_FDATA(b_broad)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(a_broad)[i] > NDArray_F32DATA(b_broad)[i] ? 1.0f : 0.0f;
         }
 #else
         for (i = 0; i < NDArray_NUMELEMENTS(a_broad); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(a_broad)[i] > NDArray_FDATA(b_broad)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(a_broad)[i] > NDArray_F32DATA(b_broad)[i] ? 1.0f : 0.0f;
         }
 #endif
     }
@@ -182,13 +182,13 @@ NDArray_Less(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_F32DATA(b_temp)[0]);
     }
 
     int i;
@@ -218,7 +218,7 @@ NDArray_Less(NDArray* nda, NDArray* ndb) {
 
     if (NDArray_DEVICE(nda) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_float_compare_less(NDArray_SHAPE(a_broad)[0], NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_float_compare_less(NDArray_SHAPE(a_broad)[0], NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                                 NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -227,8 +227,8 @@ NDArray_Less(NDArray* nda, NDArray* ndb) {
         i = 0;
         for (; i < NDArray_NUMELEMENTS(nda) - 7; i += 8) {
             // Load 8 elements from each array
-            __m256 vec1 = _mm256_loadu_ps(&NDArray_FDATA(nda)[i]);
-            __m256 vec2 = _mm256_loadu_ps(&NDArray_FDATA(ndb)[i]);
+            __m256 vec1 = _mm256_loadu_ps(&NDArray_F32DATA(nda)[i]);
+            __m256 vec2 = _mm256_loadu_ps(&NDArray_F32DATA(ndb)[i]);
 
             // Compare elements for equality
             __m256 cmp = _mm256_cmp_ps(vec1, vec2, _CMP_LT_OQ);
@@ -237,17 +237,17 @@ NDArray_Less(NDArray* nda, NDArray* ndb) {
             __m256 resultVec = _mm256_and_ps(cmp, _mm256_set1_ps(1.0f));
 
             // Store the results
-            _mm256_storeu_ps(&NDArray_FDATA(result)[i], resultVec);
+            _mm256_storeu_ps(&NDArray_F32DATA(result)[i], resultVec);
         }
 
         // Process remaining elements using scalar operations
         for (; i < NDArray_NUMELEMENTS(nda); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(nda)[i] < NDArray_FDATA(ndb)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(nda)[i] < NDArray_F32DATA(ndb)[i] ? 1.0f : 0.0f;
         }
         return result;
 #else
         for (i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(nda)[i] < NDArray_FDATA(ndb)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(nda)[i] < NDArray_F32DATA(ndb)[i] ? 1.0f : 0.0f;
         }
 #endif
     }
@@ -282,13 +282,13 @@ NDArray_LessEqual(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_F32DATA(b_temp)[0]);
     }
 
     int i;
@@ -323,7 +323,7 @@ NDArray_LessEqual(NDArray* nda, NDArray* ndb) {
 
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_float_compare_less_equal(NDArray_SHAPE(a_broad)[0], NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_float_compare_less_equal(NDArray_SHAPE(a_broad)[0], NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                                       NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -332,8 +332,8 @@ NDArray_LessEqual(NDArray* nda, NDArray* ndb) {
         i = 0;
         for (; i < NDArray_NUMELEMENTS(a_broad) - 7; i += 8) {
             // Load 8 elements from each array
-            __m256 vec1 = _mm256_loadu_ps(&NDArray_FDATA(a_broad)[i]);
-            __m256 vec2 = _mm256_loadu_ps(&NDArray_FDATA(b_broad)[i]);
+            __m256 vec1 = _mm256_loadu_ps(&NDArray_F32DATA(a_broad)[i]);
+            __m256 vec2 = _mm256_loadu_ps(&NDArray_F32DATA(b_broad)[i]);
 
             // Compare elements for equality
             __m256 cmp = _mm256_cmp_ps(vec1, vec2, _CMP_LE_OQ);
@@ -342,16 +342,16 @@ NDArray_LessEqual(NDArray* nda, NDArray* ndb) {
             __m256 resultVec = _mm256_and_ps(cmp, _mm256_set1_ps(1.0f));
 
             // Store the results
-            _mm256_storeu_ps(&NDArray_FDATA(result)[i], resultVec);
+            _mm256_storeu_ps(&NDArray_F32DATA(result)[i], resultVec);
         }
 
         // Process remaining elements using scalar operations
         for (; i < NDArray_NUMELEMENTS(a_broad); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(a_broad)[i] <= NDArray_FDATA(b_broad)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(a_broad)[i] <= NDArray_F32DATA(b_broad)[i] ? 1.0f : 0.0f;
         }
 #else
         for (i = 0; i < NDArray_NUMELEMENTS(a_broad); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(a_broad)[i] <= NDArray_FDATA(b_broad)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(a_broad)[i] <= NDArray_F32DATA(b_broad)[i] ? 1.0f : 0.0f;
         }
 #endif
     }
@@ -388,13 +388,13 @@ NDArray_GreaterEqual(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_F32DATA(b_temp)[0]);
     }
 
     int i;
@@ -424,7 +424,7 @@ NDArray_GreaterEqual(NDArray* nda, NDArray* ndb) {
 
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_float_compare_greater_equal(NDArray_SHAPE(a_broad)[0], NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_float_compare_greater_equal(NDArray_SHAPE(a_broad)[0], NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                                          NDArray_NUMELEMENTS(b_broad));
 #endif
     } else {
@@ -433,8 +433,8 @@ NDArray_GreaterEqual(NDArray* nda, NDArray* ndb) {
         i = 0;
         for (; i < NDArray_NUMELEMENTS(a_broad) - 7; i += 8) {
             // Load 8 elements from each array
-            __m256 vec1 = _mm256_loadu_ps(&NDArray_FDATA(a_broad)[i]);
-            __m256 vec2 = _mm256_loadu_ps(&NDArray_FDATA(b_broad)[i]);
+            __m256 vec1 = _mm256_loadu_ps(&NDArray_F32DATA(a_broad)[i]);
+            __m256 vec2 = _mm256_loadu_ps(&NDArray_F32DATA(b_broad)[i]);
 
             // Compare elements for equality
             __m256 cmp = _mm256_cmp_ps(vec1, vec2, _CMP_GE_OS);
@@ -443,16 +443,16 @@ NDArray_GreaterEqual(NDArray* nda, NDArray* ndb) {
             __m256 resultVec = _mm256_and_ps(cmp, _mm256_set1_ps(1.0f));
 
             // Store the results
-            _mm256_storeu_ps(&NDArray_FDATA(result)[i], resultVec);
+            _mm256_storeu_ps(&NDArray_F32DATA(result)[i], resultVec);
         }
 
         // Process remaining elements using scalar operations
         for (; i < NDArray_NUMELEMENTS(a_broad); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(a_broad)[i] >= NDArray_FDATA(b_broad)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(a_broad)[i] >= NDArray_F32DATA(b_broad)[i] ? 1.0f : 0.0f;
         }
 #else
         for (i = 0; i < NDArray_NUMELEMENTS(a_broad); i++) {
-            NDArray_FDATA(result)[i] = NDArray_FDATA(a_broad)[i] >= NDArray_FDATA(b_broad)[i] ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = NDArray_F32DATA(a_broad)[i] >= NDArray_F32DATA(b_broad)[i] ? 1.0f : 0.0f;
         }
 #endif
     }
@@ -489,13 +489,13 @@ NDArray_Equal(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_F32DATA(b_temp)[0]);
     }
 
     int i;
@@ -525,7 +525,7 @@ NDArray_Equal(NDArray* nda, NDArray* ndb) {
 
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_float_compare_equal(NDArray_SHAPE(a_broad)[0], NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_float_compare_equal(NDArray_SHAPE(a_broad)[0], NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                                  NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -534,8 +534,8 @@ NDArray_Equal(NDArray* nda, NDArray* ndb) {
         i = 0;
         for (; i < NDArray_NUMELEMENTS(nda) - 7; i += 8) {
             // Load 8 elements from each array
-            __m256 vec1 = _mm256_loadu_ps(&NDArray_FDATA(nda)[i]);
-            __m256 vec2 = _mm256_loadu_ps(&NDArray_FDATA(ndb)[i]);
+            __m256 vec1 = _mm256_loadu_ps(&NDArray_F32DATA(nda)[i]);
+            __m256 vec2 = _mm256_loadu_ps(&NDArray_F32DATA(ndb)[i]);
 
             // Compare elements for equality
             __m256 cmp = _mm256_cmp_ps(vec1, vec2, _CMP_EQ_OQ);
@@ -544,16 +544,16 @@ NDArray_Equal(NDArray* nda, NDArray* ndb) {
             __m256 resultVec = _mm256_and_ps(cmp, _mm256_set1_ps(1.0f));
 
             // Store the results
-            _mm256_storeu_ps(&NDArray_FDATA(result)[i], resultVec);
+            _mm256_storeu_ps(&NDArray_F32DATA(result)[i], resultVec);
         }
 
         // Process remaining elements using scalar operations
         for (; i < NDArray_NUMELEMENTS(nda); i++) {
-            NDArray_FDATA(result)[i] = (fabsf(NDArray_FDATA(nda)[i] - NDArray_FDATA(ndb)[i]) <= 0.0000001f) ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = (fabsf(NDArray_F32DATA(nda)[i] - NDArray_F32DATA(ndb)[i]) <= 0.0000001f) ? 1.0f : 0.0f;
         }
 #else
         for (i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-            NDArray_FDATA(result)[i] = (fabsf(NDArray_FDATA(nda)[i] - NDArray_FDATA(ndb)[i]) <= 0.0000001f) ? 1.0f : 0.0f;
+            NDArray_F32DATA(result)[i] = (fabsf(NDArray_F32DATA(nda)[i] - NDArray_F32DATA(ndb)[i]) <= 0.0000001f) ? 1.0f : 0.0f;
         }
 #endif
     }
@@ -590,13 +590,13 @@ NDArray_NotEqual(NDArray* nda, NDArray* ndb) {
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(ndb));
         copy(NDArray_SHAPE(ndb), n_shape, NDArray_NDIM(ndb));
         nda = NDArray_Zeros(n_shape, NDArray_NDIM(ndb), NDArray_TYPE(ndb), NDArray_DEVICE(ndb));
-        nda = NDArray_FillFloat(nda, NDArray_FDATA(a_temp)[0]);
+        nda = NDArray_FillFloat(nda, NDArray_F32DATA(a_temp)[0]);
     } else if (NDArray_NDIM(ndb) == 0 && NDArray_NDIM(nda) > 0) {
         b_temp = ndb;
         int *n_shape = emalloc(sizeof(int) * NDArray_NDIM(nda));
         copy(NDArray_SHAPE(nda), n_shape, NDArray_NDIM(nda));
         ndb = NDArray_Zeros(n_shape, NDArray_NDIM(nda), NDArray_TYPE(nda), NDArray_DEVICE(nda));
-        ndb = NDArray_FillFloat(ndb, NDArray_FDATA(b_temp)[0]);
+        ndb = NDArray_FillFloat(ndb, NDArray_F32DATA(b_temp)[0]);
     }
 
     int i;
@@ -626,7 +626,7 @@ NDArray_NotEqual(NDArray* nda, NDArray* ndb) {
 
     if (NDArray_DEVICE(a_broad) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        cuda_float_compare_not_equal(NDArray_SHAPE(a_broad)[0], NDArray_FDATA(a_broad), NDArray_FDATA(b_broad), NDArray_FDATA(result),
+        cuda_float_compare_not_equal(NDArray_SHAPE(a_broad)[0], NDArray_F32DATA(a_broad), NDArray_F32DATA(b_broad), NDArray_F32DATA(result),
                                      NDArray_NUMELEMENTS(a_broad));
 #endif
     } else {
@@ -635,8 +635,8 @@ NDArray_NotEqual(NDArray* nda, NDArray* ndb) {
         i = 0;
         for (; i < NDArray_NUMELEMENTS(a_broad) - 7; i += 8) {
             // Load 8 elements from each array
-            __m256 vec1 = _mm256_loadu_ps(&NDArray_FDATA(a_broad)[i]);
-            __m256 vec2 = _mm256_loadu_ps(&NDArray_FDATA(b_broad)[i]);
+            __m256 vec1 = _mm256_loadu_ps(&NDArray_F32DATA(a_broad)[i]);
+            __m256 vec2 = _mm256_loadu_ps(&NDArray_F32DATA(b_broad)[i]);
 
             // Compare elements for equality
             __m256 cmp = _mm256_cmp_ps(vec1, vec2, _CMP_NEQ_OQ);
@@ -645,16 +645,16 @@ NDArray_NotEqual(NDArray* nda, NDArray* ndb) {
             __m256 resultVec = _mm256_and_ps(cmp, _mm256_set1_ps(1.0f));
 
             // Store the results
-            _mm256_storeu_ps(&NDArray_FDATA(result)[i], resultVec);
+            _mm256_storeu_ps(&NDArray_F32DATA(result)[i], resultVec);
         }
 
         // Process remaining elements using scalar operations
         for (; i < NDArray_NUMELEMENTS(a_broad); i++) {
-            NDArray_FDATA(result)[i] = (fabsf(NDArray_FDATA(a_broad)[i] - NDArray_FDATA(b_broad)[i]) <= 0.0000001f) ? 0.0f : 1.0f;
+            NDArray_F32DATA(result)[i] = (fabsf(NDArray_F32DATA(a_broad)[i] - NDArray_F32DATA(b_broad)[i]) <= 0.0000001f) ? 0.0f : 1.0f;
         }
 #else
         for (i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-            NDArray_FDATA(result)[i] = (fabsf(NDArray_FDATA(nda)[i] - NDArray_FDATA(ndb)[i]) <= 0.0000001f) ? 0.0f : 1.0f;
+            NDArray_F32DATA(result)[i] = (fabsf(NDArray_F32DATA(nda)[i] - NDArray_F32DATA(ndb)[i]) <= 0.0000001f) ? 0.0f : 1.0f;
         }
 #endif
     }
@@ -680,11 +680,11 @@ compare_ndarrays(NDArray *a, NDArray *b) {
 
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_GPU && NDArray_DEVICE(b) == NDARRAY_DEVICE_GPU) {
 #ifdef HAVE_CUBLAS
-        diff = cuda_equal_float(NDArray_NUMELEMENTS(a), NDArray_FDATA(a), NDArray_FDATA(b), NDArray_NUMELEMENTS(a));
+        diff = cuda_equal_float(NDArray_NUMELEMENTS(a), NDArray_F32DATA(a), NDArray_F32DATA(b), NDArray_NUMELEMENTS(a));
 #endif
     } else {
         for (int i =0; i < NDArray_NUMELEMENTS(a); i++) {
-            if (NDArray_FDATA(a)[i] != NDArray_FDATA(b)[i]) {
+            if (NDArray_F32DATA(a)[i] != NDArray_F32DATA(b)[i]) {
                 diff = 0;
             }
         }
@@ -764,7 +764,7 @@ NDArray_AllClose(NDArray* a, NDArray *b, float rtol, float atol) {
     }
 
     if (NDArray_DEVICE(a) == NDARRAY_DEVICE_CPU) {
-        return float_allclose(NDArray_FDATA(a), NDArray_FDATA(b), NDArray_SHAPE(a),
+        return float_allclose(NDArray_F32DATA(a), NDArray_F32DATA(b), NDArray_SHAPE(a),
                               NDArray_STRIDES(a), NDArray_STRIDES(b),
                               NDArray_NDIM(a), atol, rtol);
     }

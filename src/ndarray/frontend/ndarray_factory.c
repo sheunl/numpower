@@ -6,7 +6,7 @@
 // ce, phpsci_ce_NDArray
 #include "../../../php_numpower.h"
 
-// NDARRAY_TYPE_FLOAT32, NDARRAY_TYPE_DOUBLE64
+// NDARRAY_TYPE_FLOAT32, NDARRAY_TYPE_FLOAT64
 #include "../../types.h"
 
 // buffer_get
@@ -119,21 +119,23 @@ void _fillFromZendArray(NDArray* ndarray, zend_array* zendArray, int* firstIndex
             case IS_LONG:
                 if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(ndarray);
+                    data_float = NDArray_F32DATA(ndarray);
                     data_float[*firstIndex] = (float) zval_get_long(element);
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(ndarray);
+                    data_double = NDArray_F64DATA(ndarray);
                     data_double[*firstIndex] = zval_get_long(element);
                 }
+                *firstIndex = *firstIndex + 1;
+                break;
             case IS_DOUBLE:
                 if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(ndarray);
+                    data_float = NDArray_F32DATA(ndarray);
                     data_float[*firstIndex] = (float) zval_get_double(element);
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(ndarray);
+                    data_double = NDArray_F64DATA(ndarray);
                     data_double[*firstIndex] = zval_get_double(element);
                 }
                 *firstIndex = *firstIndex + 1;
@@ -141,11 +143,11 @@ void _fillFromZendArray(NDArray* ndarray, zend_array* zendArray, int* firstIndex
             case IS_TRUE:
                 if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(ndarray);
+                    data_float = NDArray_F32DATA(ndarray);
                     data_float[*firstIndex] = (float) 1.0;
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(ndarray);
+                    data_double = NDArray_F64DATA(ndarray);
                     data_double[*firstIndex] = (double) 1.0;
                 }
                 *firstIndex = *firstIndex + 1;
@@ -153,11 +155,11 @@ void _fillFromZendArray(NDArray* ndarray, zend_array* zendArray, int* firstIndex
             case IS_FALSE:
                 if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT32) {
                     float* data_float;
-                    data_float = NDArray_FDATA(ndarray);
+                    data_float = NDArray_F32DATA(ndarray);
                     data_float[*firstIndex] = (float) 0.0;
-                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_DOUBLE64) {
+                } else if (NDArray_TYPE(ndarray) == NDARRAY_TYPE_FLOAT64) {
                     double* data_double;
-                    data_double = NDArray_DDATA(ndarray);
+                    data_double = NDArray_F64DATA(ndarray);
                     data_double[*firstIndex] = (double) 0.0;
                 }
                 *firstIndex = *firstIndex + 1;
@@ -208,8 +210,6 @@ NDArray* _createFromZendArray(zend_array* ht, const char *type)
     }
 
     NDArray* array = NDArray_create(shape, ndim, type, NDARRAY_DEVICE_CPU);
-
-    add_to_buffer(array);
     
     if (ndim != 0) {
         _createBuffer(array, total_num_elements, get_type_size(type));
@@ -218,6 +218,8 @@ NDArray* _createFromZendArray(zend_array* ht, const char *type)
         array->data = NULL;
         array->descriptor->numElements = 0;
     }
+
+    add_to_buffer(array);
 
     return array;
 }
@@ -233,6 +235,7 @@ NDArray* _createFloat32FromLongScalar(long scalar)
 {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
+    rtn->uuid = -1;
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
@@ -263,6 +266,7 @@ NDArray* _createFloat32FromDoubleScalar(double scalar)
 {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
+    rtn->uuid = -1;
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
@@ -293,11 +297,12 @@ NDArray* _createDouble64FromLongScalar(long scalar)
 {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
+    rtn->uuid = -1;
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
     rtn->descriptor->elsize = sizeof(double);
-    rtn->descriptor->type = NDARRAY_TYPE_DOUBLE64;
+    rtn->descriptor->type = NDARRAY_TYPE_FLOAT64;
     rtn->data = emalloc(sizeof(double));
     rtn->device = NDARRAY_DEVICE_CPU;
     rtn->strides = emalloc(sizeof(int));
@@ -323,11 +328,12 @@ NDArray* _createDouble64FromDoubleScalar(double scalar)
 {
     NDArray *rtn = safe_emalloc(1, sizeof(NDArray), 0);
 
+    rtn->uuid = -1;
     rtn->ndim = 0;
     rtn->descriptor = emalloc(sizeof(NDArrayDescriptor));
     rtn->descriptor->numElements = 1;
     rtn->descriptor->elsize = sizeof(double);
-    rtn->descriptor->type = NDARRAY_TYPE_DOUBLE64;
+    rtn->descriptor->type = NDARRAY_TYPE_FLOAT64;
     rtn->data = emalloc(sizeof(double));
     rtn->device = NDARRAY_DEVICE_CPU;
     rtn->strides = emalloc(sizeof(int));
@@ -377,11 +383,11 @@ NDArray* NDArrayFactory_createFromZval(zval* obj, const char* type)
         return _createFloat32FromDoubleScalar(Z_DVAL_P(obj));
     }
 
-    if (Z_TYPE_P(obj) == IS_LONG && type == NDARRAY_TYPE_DOUBLE64) {
+    if (Z_TYPE_P(obj) == IS_LONG && type == NDARRAY_TYPE_FLOAT64) {
         return _createDouble64FromLongScalar(Z_LVAL_P(obj));
     }
 
-    if (Z_TYPE_P(obj) == IS_DOUBLE && type == NDARRAY_TYPE_DOUBLE64) {
+    if (Z_TYPE_P(obj) == IS_DOUBLE && type == NDARRAY_TYPE_FLOAT64) {
         return _createDouble64FromDoubleScalar(Z_DVAL_P(obj));
     }
     if (Z_TYPE_P(obj) == IS_OBJECT) {

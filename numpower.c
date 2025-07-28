@@ -63,7 +63,7 @@
 // COMPILE_DL_NDARRAY, HAVE_CUBLAS, HAVE_GD
 #include "config.h"
 
-// NDARRAY_TYPE_DOUBLE64, NDARRAY_TYPE_FLOAT32
+// NDARRAY_TYPE_FLOAT64, NDARRAY_TYPE_FLOAT32
 #include "src/types.h"
 
 // NDArray_Diagonal
@@ -164,10 +164,10 @@ PHP_METHOD(NDArray, __construct) {
 
     if (dataTypeLen == 7 && memcmp(dataType, "float32", 7) == 0) {
         ndarrayDataType = NDARRAY_TYPE_FLOAT32;
-    } else if (dataTypeLen == 8 && memcmp(dataType, "double64", 8) == 0) {
-        ndarrayDataType = NDARRAY_TYPE_DOUBLE64;
+    } else if (dataTypeLen == 7 && memcmp(dataType, "float64", 7) == 0) {
+        ndarrayDataType = NDARRAY_TYPE_FLOAT64;
     } else {
-        zend_throw_error(NULL, "Invalid data type. Supported types are: float32, double64");
+        zend_throw_error(NULL, "Invalid data type. Supported types are: float32, float64");
     }
 
     NDArray* array = NDArrayFactory_createFromZval(input, ndarrayDataType);
@@ -213,7 +213,7 @@ void ndarray_init_new_object(NDArray* array, zval* return_value) {
         object_init_ex(return_value, phpsci_ce_NDArray);
         ZVAL_LONG(OBJ_PROP_NUM(Z_OBJ_P(return_value), 0), NDArray_UUID(array));
     } else {
-        if (NDArray_TYPE(array) == NDARRAY_TYPE_DOUBLE64) {
+        if (NDArray_TYPE(array) == NDARRAY_TYPE_FLOAT64) {
             ZVAL_DOUBLE(return_value, NDArray_GetDoubleScalar(array));
         } else {
             ZVAL_DOUBLE(return_value, NDArray_GetFloatScalar(array));
@@ -390,7 +390,7 @@ static int ndarray_do_operation_ex(zend_uchar opcode, zval *result, zval *op1, z
     NDArray *rtn = NULL;
     switch(opcode) {
     case ZEND_ADD:
-        if (NDArray_TYPE(nda) == NDARRAY_TYPE_DOUBLE64) {
+        if (NDArray_TYPE(nda) == NDARRAY_TYPE_FLOAT64) {
             rtn = NDArray_Add_Double(nda, ndb);
         } else {
             rtn = NDArray_Add_Float(nda, ndb);
@@ -660,7 +660,11 @@ PHP_METHOD(NDArray, toArray) {
         return;
     }
     if (NDArray_NDIM(array) == 0) {
-        RETURN_DOUBLE(NDArray_FDATA(array)[0]);
+        if (NDArray_TYPE(array) == NDARRAY_TYPE_FLOAT32) {
+            RETURN_DOUBLE(NDArray_F32DATA(array)[0]);
+        } else if (NDArray_TYPE(array) == NDARRAY_TYPE_FLOAT64) {
+            RETURN_DOUBLE(NDArray_F64DATA(array)[0]);
+        }
         NDArray_FREE(array);
         return;
     }
@@ -897,7 +901,7 @@ PHP_METHOD(NumPower, zeros) {
     }
     shape = emalloc(sizeof(int) * NDArray_NUMELEMENTS(nda));
     for (int i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-        shape[i] = (int) NDArray_FDATA(nda)[i];
+        shape[i] = (int) NDArray_F32DATA(nda)[i];
     }
     rtn = NDArray_Zeros(shape, NDArray_NUMELEMENTS(nda), NDARRAY_TYPE_FLOAT32, NDARRAY_DEVICE_CPU);
     NDArray_FREE(nda);
@@ -1151,7 +1155,7 @@ PHP_METHOD(NumPower, normal) {
     shape = emalloc(sizeof(int) * NDArray_NUMELEMENTS(nda));
     
     for (int i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-        shape[i] = (int) NDArray_FDATA(nda)[i];
+        shape[i] = (int) NDArray_F32DATA(nda)[i];
     }
 
     rtn = NDArray_Normal(loc, scale, shape, NDArray_NUMELEMENTS(nda), accelerator_i);
@@ -1197,7 +1201,7 @@ PHP_METHOD(NumPower, truncatedNormal) {
     shape = emalloc(sizeof(int) * NDArray_NUMELEMENTS(nda));
 
     for (int i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-        shape[i] = (int) NDArray_FDATA(nda)[i];
+        shape[i] = (int) NDArray_F32DATA(nda)[i];
     }
 
     rtn = NDArray_TruncatedNormal(loc, scale, shape, NDArray_NUMELEMENTS(nda), accelerator_i);
@@ -1231,7 +1235,7 @@ PHP_METHOD(NumPower, randomBinomial) {
     if (nda == NULL) return;
     ishape = emalloc(sizeof(int) * NDArray_NUMELEMENTS(nda));
     for (int i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-        ishape[i] = (int) NDArray_FDATA(nda)[i];
+        ishape[i] = (int) NDArray_F32DATA(nda)[i];
     }
     rtn = NDArray_Binomial(ishape, NDArray_NUMELEMENTS(nda), (int)n, (float)p);
     NDArray_FREE(nda);
@@ -1366,7 +1370,7 @@ PHP_METHOD(NumPower, uniform) {
     }
     shape = emalloc(sizeof(int) * NDArray_NUMELEMENTS(nda));
     for (int i = 0; i < NDArray_NUMELEMENTS(nda); i++) {
-        shape[i] = (int) NDArray_FDATA(nda)[i];
+        shape[i] = (int) NDArray_F32DATA(nda)[i];
     }
     rtn = NDArray_Uniform(low, high, shape, NDArray_NUMELEMENTS(nda));
     NDArray_FREE(nda);
@@ -5281,7 +5285,7 @@ PHP_METHOD(NDArray, __serialize) {
         return;
     }
     if (NDArray_NDIM(array) == 0) {
-        RETURN_DOUBLE(NDArray_FDATA(array)[0]);
+        RETURN_DOUBLE(NDArray_F32DATA(array)[0]);
         NDArray_FREE(array);
         return;
     }

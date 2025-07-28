@@ -55,7 +55,7 @@ NDArray_Dump(NDArray* array) {
  * @return
  */
 char*
-print_array_float(float* buffer, int ndims, int* shape, int* strides, int cur_dim, int* index, int num_elements, int* padded) {
+print_array_float32(float* buffer, int ndims, int* shape, int* strides, int cur_dim, int* index, int num_elements, int* padded) {
     char* str;
     int i, j, t;
     int reverse_run = 0;
@@ -92,7 +92,7 @@ print_array_float(float* buffer, int ndims, int* shape, int* strides, int cur_di
                 offset += index[k] * strides[k];
             }
             // Print the element
-            sprintf(str + strlen(str), "%g", buffer[offset / sizeof(float)]);
+            sprintf(str + strlen(str), "%.8g", buffer[offset / sizeof(float)]);
 
             // Print a comma if this is not the last element in the dimension
             if (i < shape[cur_dim] - 1) {
@@ -136,7 +136,8 @@ print_array_float(float* buffer, int ndims, int* shape, int* strides, int cur_di
             // Update the index of this element
             index[cur_dim] = i;
 
-            char* child_str = print_array_float(buffer, ndims, shape, strides, cur_dim + 1, index, num_elements, padded);
+            char* child_str = print_array_float32(buffer, ndims, shape, strides, cur_dim + 1, index, num_elements,
+                                                  padded);
 
             // Add the child string to the parent string
             sprintf(str + strlen(str), "%s", child_str);
@@ -194,19 +195,18 @@ print_array_float(float* buffer, int ndims, int* shape, int* strides, int cur_di
  * @return
  */
 char*
-print_array(double* buffer, int ndims, int* shape, int* strides, int cur_dim, int* index, int num_elements, int* padded) {
+print_array_float64(double* buffer, int ndims, int* shape, int* strides, int cur_dim, int* index, int num_elements, int* padded) {
     char* str;
     int i, j, t;
     int reverse_run = 0;
 
     if (num_elements == 0) {
-        str = (char*)emalloc(3 * sizeof(char));
         str = "[]";
         return str;
     }
 
     // Allocate memory for the string
-    str = (char*)emalloc(10000000 * sizeof(char));
+    str = (char*)emalloc(num_elements * 64 * sizeof(char));
     if (str == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for string.\n");
         exit(1);
@@ -231,7 +231,7 @@ print_array(double* buffer, int ndims, int* shape, int* strides, int cur_dim, in
                 offset += index[k] * strides[k];
             }
             // Print the element
-            sprintf(str + strlen(str), "%g", buffer[offset / sizeof(double)]);
+            sprintf(str + strlen(str), "%.16g", buffer[offset / sizeof(double)]);
 
             // Print a comma if this is not the last element in the dimension
             if (i < shape[cur_dim] - 1) {
@@ -275,7 +275,8 @@ print_array(double* buffer, int ndims, int* shape, int* strides, int cur_dim, in
             // Update the index of this element
             index[cur_dim] = i;
 
-            char* child_str = print_array(buffer, ndims, shape, strides, cur_dim + 1, index, num_elements, padded);
+            char* child_str = print_array_float64(buffer, ndims, shape, strides, cur_dim + 1, index, num_elements,
+                                                  padded);
 
             // Add the child string to the parent string
             sprintf(str + strlen(str), "%s", child_str);
@@ -331,7 +332,7 @@ print_array(double* buffer, int ndims, int* shape, int* strides, int cur_dim, in
  * @param strides
  */
 char*
-print_matrix_float(float* buffer, int ndims, int* shape, int* strides, int num_elements, int device) {
+print_matrix_float32(float* buffer, int ndims, int* shape, int* strides, int num_elements, int device) {
     float *tmp_buffer;
     int *index = emalloc(ndims * sizeof(int));
     if (device == NDARRAY_DEVICE_GPU) {
@@ -343,7 +344,7 @@ print_matrix_float(float* buffer, int ndims, int* shape, int* strides, int num_e
         tmp_buffer = buffer;
     }
     int padded = 0;
-    char* rtn = print_array_float(tmp_buffer, ndims, shape, strides, 0, index, num_elements, &padded);
+    char* rtn = print_array_float32(tmp_buffer, ndims, shape, strides, 0, index, num_elements, &padded);
     efree(index);
 #ifdef HAVE_CUBLAS
     if (device == NDARRAY_DEVICE_GPU) {
@@ -354,7 +355,7 @@ print_matrix_float(float* buffer, int ndims, int* shape, int* strides, int num_e
 }
 
 char*
-print_matrix(double* buffer, int ndims, int* shape, int* strides, int num_elements, int device) {
+print_matrix_float64(double* buffer, int ndims, int* shape, int* strides, int num_elements, int device) {
     double *tmp_buffer;
     int *index = emalloc(ndims * sizeof(int));
     if (device == NDARRAY_DEVICE_GPU) {
@@ -366,7 +367,7 @@ print_matrix(double* buffer, int ndims, int* shape, int* strides, int num_elemen
         tmp_buffer = buffer;
     }
     int padded = 0;
-    char* rtn = print_array(tmp_buffer, ndims, shape, strides, 0, index, num_elements, &padded);
+    char* rtn = print_array_float64(tmp_buffer, ndims, shape, strides, 0, index, num_elements, &padded);
     efree(index);
 #ifdef HAVE_CUBLAS
     if (device == NDARRAY_DEVICE_GPU) {
