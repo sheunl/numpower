@@ -1,13 +1,17 @@
 {
-    "name": "rubixnumpower/extension",
-    "require-dev": {
-        "phpbench/phpbench": "^1.0"
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Numpower\\Benchmarks\\": "benchmarks/initializers"
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+  "name": "rubixnumpower/extension",
+  "require-dev": {
+    "phpbench/phpbench": "^1.0",
+    "phpunit/phpunit": "^12.2",
+    "rubixml/numpower": "dev-main",
+    "ext-gd": "*"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Numpower\\Benchmarks\\": "benchmarks/initializers",
+      "Numpower\\Tests\\": "php-tests"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }
