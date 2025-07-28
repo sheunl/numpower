@@ -164,7 +164,7 @@ static void set_ndarray_value(NDArray *ndarray, int index, double value) {
         double *data = (double *)NDArray_DATA(ndarray);
         data[index] = value;
     } else {
-        zend_throw_error(NULL, "Unsupported NDArray dtype: %s", NDArray_TYPE(ndarray));
+        zend_throw_error(NULL, "Invalid data type. Supported types are: float32, float64");
     }
 }
 
