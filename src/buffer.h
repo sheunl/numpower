@@ -14,7 +14,7 @@ struct MemoryStack {
     int totalAllocated;
     int totalFreed;
 #ifdef ZTS
-    tsrm_mutex_t lock;
+    MUTEX_T lock;
 #endif
 };
 
