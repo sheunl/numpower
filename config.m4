@@ -19,7 +19,7 @@ if test "$PHP_CUDA" != "no"; then
               [
                 AC_DEFINE(HAVE_AVX2,1,[Have AV2/SSE support])
                 AC_MSG_RESULT([AVX2/SSE detected ])
-                CXX+=" -mavx2 -march=native "
+                CFLAGS+=" -mavx2 -march=native "
               ],[
                 AC_DEFINE(HAVE_AVX2,0,[Have AV2/SSE support])
                 AC_MSG_RESULT([AVX2/SSE not found ])
