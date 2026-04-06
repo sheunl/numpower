@@ -14,7 +14,7 @@ if test "$PHP_CUDA" != "no"; then
       PHP_ADD_LIBRARY(cublas,,NDARRAY_SHARED_LIBADD)
       AC_MSG_RESULT([CUBLAS detected ])
       PHP_ADD_MAKEFILE_FRAGMENT($abs_srcdir/Makefile.frag, $abs_builddir)
-      CFLAGS+=" -lcublas -lcudart -lOpenCL -lclBLAS"
+      CFLAGS+=" -lcublas -lcudart"
       AC_CHECK_HEADER([immintrin.h],
               [
                 AC_DEFINE(HAVE_AVX2,1,[Have AV2/SSE support])
