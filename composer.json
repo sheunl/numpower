@@ -9,7 +9,8 @@
       {
         "name": "with-cuda",
         "description": "Enable CUDA support for GPU acceleration",
-        "needs-value": true
+        "needs-value": false,
+        "default": true
       }
     ]
   },
