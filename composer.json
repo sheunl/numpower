@@ -1,9 +1,21 @@
 {
-  "name": "rubixnumpower/extension",
+  "name": "sheunl/numpower",
+  "description": "A PHP extension for high-performance numerical computations, leveraging GPU acceleration with CUDA.",
+  "license": "MIT",
+  "type": "php-ext",
+  "php-ext": {
+    "extension-name": "ndarray",
+    "configure-options": [
+      {
+        "name": "with-cuda",
+        "description": "Enable CUDA support for GPU acceleration",
+        "needs-value": false
+      }
+    ]
+  },
   "require-dev": {
     "phpbench/phpbench": "^1.0",
     "phpunit/phpunit": "^12.2",
-    "rubixml/numpower": "dev-main",
     "ext-gd": "*"
   },
   "autoload-dev": {
